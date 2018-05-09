@@ -3,7 +3,7 @@
     <div class="columns">
 
       <div class="column">
-        <h2 class="title is-2">Kafka Monitor</h2>
+        <h2 class="title is-2">Real time Kafka Monitor</h2>
         <div id="main" style="min-witdh:100%; min-height:400px; "></div>
         <div></div>
         <div></div>
@@ -17,16 +17,20 @@
         <div id="trafficpanel" >
           <aside>
             <h5 class="title is-5">Diferencias de mensajes</h5>
-              <div class="column is-half jobstraffic-green" style="background-color:#87d887 !important;">
+              <div class="column is-half jobstraffic-green" style="background-color: #87d887 !important;">
                 <p>Rapidos</p>
                 <ul class="menu-list is-size-7">
-                  <li v-for="topic in topicsNames" :key="topic">
-                    <p v-bind:id="topic">{{ topic }}</p>
+
+                  <!--<div class="active-users" v-for="user in activeUsers">
+                  <h3>{{user.name}}</h3>
+                  </div>-->
+                  <li  v-for="topic in fastTopics" :key="topic">
+                    <p v-bind:id="topic.name">{{ topic.name }}</p>
                   </li>
                 </ul>
               </div>
-              <div class="column is-half jobstraffic-yellow" style="background-color:#fbfba1 !important;">Lentos</div>
-              <div class="column is-half jobstraffic-red" style="background-color:#ef9090 !important;">Parados</div>
+              <div class="column is-half jobstraffic-yellow" style="background-color: #fbfba1 !important;">Lentos</div>
+              <div class="column is-half jobstraffic-red" style="background-color: #ef9090 !important;">Parados</div>
           </aside>
         </div>
       </div>
@@ -118,7 +122,7 @@
  * 
  */
 import echarts from 'echarts'
-import { keys, sortBy, filter, values, mapValues, pick, map, zipObject, compact, includes, reduce } from 'lodash'
+import { keys, sortBy, filter, values, mapValues, pick, pickBy, map, zipObject, compact, includes, reduce } from 'lodash'
 
 import Vue from 'vue'
 import VueNativeNotification from 'vue-native-notification'
@@ -171,6 +175,13 @@ export default {
     createMultiplChart(){
     }
   },
+   computed: { 
+    fastTopics: function() {
+      return pickBy(this.topics, function(u) {
+        return u.data
+      })
+    } // contains only 
+   },
   mounted () {
 
     Vue.use(VueNativeNotification, {
@@ -316,10 +327,9 @@ export default {
           }
         }
 
-        console.log(JSON.stringify(keys(tmp))+''+JSON.stringify(values(tmp)))
+        console.log(JSON.stringify(keys(tmp))+'\n'+JSON.stringify(values(tmp)))
         this.topics = tmp
         this.topicsNames = keys(this.topics)
-
         
         this.newValues = values(mapValues(this.topics, (data, name) => {
           return {
@@ -349,7 +359,7 @@ export default {
       }, []);
       
       var valuesToCheck = newArray.map(value => value.value.data)
-     // alert(JSON.stringify(newArray.map(value =>  value.value.data)))
+
 
       for(let a in valuesToCheck){
         if(valuesToCheck[a].includes(this.minimumTraffic)){
@@ -359,15 +369,19 @@ export default {
 
     },
     exabeatTopicsChanged(data){
-
-      if(data == 0){
-        
-        this.showNotification('Se han realizado cambios sobre el fichero de configuración', 'Archivo Config.json cambiado')
-
-      }else{
-        this.showNotification('Topics cambiados', 'Se han cambiado los topics desde el archivo de configuración')
-      }
+      switch (data) {
+        case 'changed':
+          this.showNotification('Topics cambiados', 'Se han cambiado los topics desde el archivo de configuración')
+          break;
+        case 'removed':
+          this.showNotification('Se ha borrado el fichero de configuración', 'Archivo Config.json borrado')
+          break;
       
+        default:
+        this.showNotification('Se han realizado cambios sobre el fichero de configuración', 'Archivo Config.json cambiado')
+          break;
+      }
+
      }
   }
 }

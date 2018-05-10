@@ -48,7 +48,7 @@
         </div>
         <div class="column">
           <div id="counter" >
-            <p id="counterp">Total: {{ this.counter }}</p>
+            <p id="counterp">Recibidos totales: {{ this.counter }}</p>
             <p id="messagePerInterval">{{ this.messagesPerInterval }}
               <span v-if="selectedTime == 1">/s</span>
               <span v-else-if="selectedTime == 60">/m</span>
@@ -88,9 +88,8 @@
         </div>
           <div class="column">
             <h4>Notificarme cada:</h4>
-            <input class="input" type="number" placeholder="2" value="2">  
+            <input class="input" type="number" v-model="notificationsTime" placeholder="2" value="2">  
           </div>
-
 
           <div class="column">
             <div class="select">
@@ -101,7 +100,6 @@
               </select>
             </div>
           </div>
-
         
       </div>
 
@@ -122,7 +120,7 @@
  * 
  */
 import echarts from 'echarts'
-import { keys, sortBy, filter, values, mapValues, pick, pickBy, map, zipObject, compact, includes, reduce } from 'lodash'
+import { keys, sortBy, filter, values, mapValues, pick, pickBy, map, zipObject, compact, includes, reduce, some } from 'lodash'
 
 import Vue from 'vue'
 import VueNativeNotification from 'vue-native-notification'
@@ -149,9 +147,42 @@ export default {
       interval: 5000,
       selected: null,
       selectedTopics: [],
-      newValues: []
+      newValues: [],
+      notiChange: false,
+      time: parseInt(this.notificationsTime * this.notificationsTimeMeasure) * 1000
     }
   },
+  mounted () {
+
+    Vue.use(VueNativeNotification, {
+      requestOnNotify: true
+    })
+
+    this.createMultipleChart()
+    this.minimumWatcher()
+
+  },
+  sockets: {
+    exabeat (data) {
+        this.processData(data)
+        this.setChartdata()
+
+    },
+    exabeatTopicsChanged(data){
+      this.setNotification(data)  
+    }
+  },
+  watch: {
+    // whenever timeMeasure or sleted amount of time changes, this functions will run
+    notificationsTime: function (newQuestion, oldQuestion) {
+
+    },
+    notificationsTimeMeasure: function (){
+
+    }
+
+  },
+
   methods: {
     showNotification(titulo, message){
 
@@ -160,139 +191,63 @@ export default {
       }, {})
 
     },
-    customLabel (option) {
-
-      return `${option.library} - ${option.language}`
+    setNotification(action){
+      switch (action) {
+        case 'changed':
+          this.showNotification('Topics cambiados', 'Se han cambiado los topics desde el archivo de configuración')
+          break;
+        case 'removed':
+          this.showNotification('Se ha borrado el fichero de configuración', 'Archivo Config.json borrado')
+          break;
+      
+        default:
+        this.showNotification('Se han realizado cambios sobre el fichero de configuración', 'Archivo Config.json cambiado')
+          break;
+      }
     },
-    showNotificationInterval(){
+    checkIfReached(x){
+        return x <= this.minimumTraffic
+    },
+    reduceTopics(){
 
+      var valuesToCheck = this.newValues.reduce((results, value) => {
+        const nombre = value.name
+        return (this.selectedTopics.indexOf(nombre) > -1) ? [...results, { value, name }] : results;
+      }, []).map(value => value.value.data)
+
+      return valuesToCheck[0]
+    },
+    
+    minimumWatcher(){
+      
+      setInterval(function () { 
+        this.notifyMinimum()
+      }.bind(this), 1000)
+      
+    },
+    notifyMinimum(){
+    
       setInterval(function () {
-          this.$notification.show('Trafico de mensajes', {
-          body: 'Trafico de mensajes a llegado a ' + this.minimumTraffic
-          }, {})
-        }.bind(this), 5 * parseInt(60 * 1000))
+        if(some(this.reduceTopics(), this.checkIfReached)){
+          this.showNotification('Topic ha llegado a '+ this.minimumTraffic,'Se ha llegado al trafico minimo de mensajes asignado: '+this.minimumTraffic)
+        }
+      }.bind(this), parseInt(this.notificationsTime * this.notificationsTimeMeasure) * 1000 )
     },
-    createMultiplChart(){
-    }
-  },
-   computed: { 
-    fastTopics: function() {
-      return pickBy(this.topics, function(u) {
-        return u.data
+
+    setChartdata(){
+      this.multipleChart.setOption({
+        legend: {
+            data: this.topicsNames,
+            type: 'scroll',
+            left: 10
+        },
+        xAxis: {
+          data: this.date
+        },
+         series : this.newValues
       })
-    } // contains only 
-   },
-  mounted () {
-
-    Vue.use(VueNativeNotification, {
-      requestOnNotify: true
-    })
-
-
-    setInterval(function () {
-      this.secondsSpent++
-
-      // It's always at the watch if it got into traffic minimum to show notification, every second
-      if(this.minimumTraffic == this.messagesPerInterval){
-        setInterval(function () {
-          this.$notification.show('Trafico de mensajes', {
-          body: 'Trafico de mensajes a llegado al minimo de ' + this.minimumTraffic
-          }, {})
-        }.bind(this), parseInt(this.notificationsTime) * parseInt(this.notificationsTimeMeasure) * 1000)//1 * parseInt(1 * 1000))
-     }
-    }.bind(this), 1000)
-
-
-    // initialize echarts instance with prepared DOM
-    const multipleChart = echarts.init(document.getElementById('main'))
-    this.multipleChart = multipleChart
-    /*NEW CHART*/
-    multipleChart.setOption({
-    title: {
-        text: ''
     },
-    grid:{
-      y2: 100
-    },
-    tooltip : {
-        trigger: 'axis',
-        axisPointer: {
-            type: 'cross',
-            label: {
-                backgroundColor: '#6a7985'
-            }
-        }
-    },
-      toolbox: {
-        show: true,
-        bottom: 0,
-        right: 80,
-        feature: {
-          dataZoom: {
-            yAxisIndex: 'none',
-            title: {
-              zoom: 'Zoom',
-              back: 'Back'
-            }
-          },
-          magicType: {
-            type: ['line', 'bar'],
-            title: {
-              line: 'Line chart',
-              bar: 'Bar chart'
-            }
-          },
-          restore: {
-            title: 'Restore'
-          },
-          saveAsImage: {
-            name: 'Save',
-            title: 'Save'
-          }
-        }
-    },
-    grid: {
-        left: '3%',
-        right: '4%',
-        bottom: '3%',
-        containLabel: true
-    },
-    xAxis : [
-        {
-            
-          type: 'category',
-          boundaryGap: false
-        }
-    ],
-    yAxis : [
-        {
-          type: 'value',
-            boundaryGap: [0, '30%'],
-            axisLabel: {
-              formatter: '{value} req/'+ this.interval/1000 +'s'
-            }
-        }
-    ],
-    series : [{
-            type:'line',
-            stack: '总量',
-            areaStyle: {normal: {}}
-        }
-    ]
-  })
-
-    this.$nextTick(() => {
-      window.addEventListener('resize', () => {
-        [multipleChart].forEach(c => {
-          c.resize()
-        })
-      })
-    })
-
-
-  },
-  sockets: {
-    exabeat (data) {
+    processData(data){
 
       this.counter++
       const now = new Date()
@@ -327,64 +282,116 @@ export default {
           }
         }
 
-        console.log(JSON.stringify(keys(tmp))+'\n'+JSON.stringify(values(tmp)))
-        this.topics = tmp
-        this.topicsNames = keys(this.topics)
-        
-        this.newValues = values(mapValues(this.topics, (data, name) => {
-          return {
-            name: name, 
-            type:'line',
-            stack: '总量',
-            areaStyle: {normal: {}},  
-            data: data }
-        }))
-
+      console.log(JSON.stringify(keys(tmp))+'\n'+JSON.stringify(values(tmp)))
+      this.topics = tmp
+      this.topicsNames = keys(this.topics)
       
-        this.multipleChart.setOption({
-        legend: {
-            data: this.topicsNames,
-            type: 'scroll',
-            left: 10
-        },
-        xAxis: {
-          data: this.date
-        },
-         series : this.newValues
-      })
-
-      var newArray = this.newValues.reduce((results, value) => {
-        const nombre = value.name
-        return (this.selectedTopics.indexOf(nombre) > -1) ? [...results, { value, name }] : results;
-      }, []);
-      
-      var valuesToCheck = newArray.map(value => value.value.data)
-
-
-      for(let a in valuesToCheck){
-        if(valuesToCheck[a].includes(this.minimumTraffic)){
-          this.showNotification('Topic ha llegado a '+ this.minimumTraffic,'Se ha llegado al minimo flujo de mensajes asignado: '+this.minimumTraffic)
-        }
-      }
-
+      this.newValues = values(mapValues(this.topics, (data, name) => {
+        return {
+          name: name, 
+          type:'line',
+          stack: '总量',
+          areaStyle: {normal: {}},  
+          data: data }
+      }))
     },
-    exabeatTopicsChanged(data){
-      switch (data) {
-        case 'changed':
-          this.showNotification('Topics cambiados', 'Se han cambiado los topics desde el archivo de configuración')
-          break;
-        case 'removed':
-          this.showNotification('Se ha borrado el fichero de configuración', 'Archivo Config.json borrado')
-          break;
-      
-        default:
-        this.showNotification('Se han realizado cambios sobre el fichero de configuración', 'Archivo Config.json cambiado')
-          break;
-      }
+    createMultipleChart(){
 
-     }
+      // initialize echarts instance with prepared DOM
+      this.multipleChart = echarts.init(document.getElementById('main'))
+      /*NEW CHART*/
+      this.multipleChart.setOption({
+      title: {
+          text: ''
+      },
+      grid:{
+        y2: 100
+      },
+      tooltip : {
+          trigger: 'axis',
+          axisPointer: {
+              type: 'cross',
+              label: {
+                  backgroundColor: '#6a7985'
+              }
+          }
+      },
+        toolbox: {
+          show: true,
+          bottom: 0,
+          right: 80,
+          feature: {
+            dataZoom: {
+              yAxisIndex: 'none',
+              title: {
+                zoom: 'Zoom',
+                back: 'Back'
+              }
+            },
+            magicType: {
+              type: ['line', 'bar'],
+              title: {
+                line: 'Line chart',
+                bar: 'Bar chart'
+              }
+            },
+            restore: {
+              title: 'Restore'
+            },
+            saveAsImage: {
+              name: 'Save',
+              title: 'Save'
+            }
+          }
+      },
+      grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          containLabel: true
+      },
+      xAxis : [
+          {
+              
+            type: 'category',
+            boundaryGap: false
+          }
+      ],
+      yAxis : [
+          {
+            type: 'value',
+              boundaryGap: [0, '30%'],
+              axisLabel: {
+                formatter: '{value} req/'+ this.interval/1000 +'s'
+              }
+          }
+      ],
+      series : [{
+              type:'line',
+              stack: '总量',
+              areaStyle: {normal: {}}
+          }
+      ]
+    })
+
+      this.$nextTick(() => {
+        window.addEventListener('resize', () => {
+          [this.multipleChart].forEach(c => {
+            c.resize()
+          })
+        })
+      })
+        
+      }
+    },
+    computed: { 
+      fastTopics: function() {
+        return pickBy(this.topics, function(u) {
+          return u.data
+        })
+      } // contains only 
+    },
   }
-}
 </script>
 
 <style>

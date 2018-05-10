@@ -141,15 +141,15 @@ export default {
       secondsSpent: 0,
       selectedTime: 1,
       notificationsTime: 5,
-      minimumTraffic: -50,
-      notificationsTimeMeasure: 60,
+      minimumTraffic: 0,
+      notificationsTimeMeasure: 1,
       numeroSlice: -5,
       interval: 5000,
       selected: null,
       selectedTopics: [],
       newValues: [],
       notiChange: false,
-      time: parseInt(this.notificationsTime * this.notificationsTimeMeasure) * 1000
+      timer: ''
     }
   },
   mounted () {
@@ -159,7 +159,7 @@ export default {
     })
 
     this.createMultipleChart()
-    this.minimumWatcher()
+    this.notifyMinimum()
 
   },
   sockets: {
@@ -172,17 +172,16 @@ export default {
       this.setNotification(data)  
     }
   },
-  watch: {
-    // whenever timeMeasure or sleted amount of time changes, this functions will run
-    notificationsTime: function (newQuestion, oldQuestion) {
+  watch:{
+    notificationsTime: function(){
+      clearInterval(this.timer)
 
     },
-    notificationsTimeMeasure: function (){
-
+    notificationsTimeMeasure: function(){
+      clearInterval(this.timer)
     }
 
   },
-
   methods: {
     showNotification(titulo, message){
 
@@ -195,14 +194,13 @@ export default {
       switch (action) {
         case 'changed':
           this.showNotification('Topics cambiados', 'Se han cambiado los topics desde el archivo de configuración')
-          break;
+          break
         case 'removed':
           this.showNotification('Se ha borrado el fichero de configuración', 'Archivo Config.json borrado')
-          break;
-      
+          break
         default:
         this.showNotification('Se han realizado cambios sobre el fichero de configuración', 'Archivo Config.json cambiado')
-          break;
+          break
       }
     },
     checkIfReached(x){
@@ -217,21 +215,14 @@ export default {
 
       return valuesToCheck[0]
     },
-    
-    minimumWatcher(){
-      
-      setInterval(function () { 
-        this.notifyMinimum()
-      }.bind(this), 1000)
-      
-    },
     notifyMinimum(){
-    
-      setInterval(function () {
+      
+      this.timer = setInterval(function () {
+
         if(some(this.reduceTopics(), this.checkIfReached)){
           this.showNotification('Topic ha llegado a '+ this.minimumTraffic,'Se ha llegado al trafico minimo de mensajes asignado: '+this.minimumTraffic)
         }
-      }.bind(this), parseInt(this.notificationsTime * this.notificationsTimeMeasure) * 1000 )
+      }.bind(this), parseInt(this.notificationsTime * this.notificationsTimeMeasure) * 1000)
     },
 
     setChartdata(){

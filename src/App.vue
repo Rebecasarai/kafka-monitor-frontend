@@ -175,8 +175,8 @@ export default {
   },
   methods: {
     /**@description Shows a notification with a title and a body message
-     * @argument {String} titulo Represents the header of the notification
-     * @argument {String} message represents the body message
+     * @param {String} titulo Represents the header of the notification
+     * @param {String} message represents the body message
      */
     showNotification(titulo, message){
 
@@ -308,7 +308,7 @@ export default {
 
     /**@description Process the data passed by the exabeat socket function. 
      * This is a message sent from the backend and contains the KAFKA data
-     * @param data
+     * @param data 
      */
     processData(data){
 
@@ -329,8 +329,7 @@ export default {
     /**@description Makes the chart dinamic, depending on the kafka topics information. 
      * Updates in real time, removing or adding the lines representing the topics traffic
      * Sets an array with the options data for the chart. This is mainly done beacuse when
-     * a new topic is added, throws an error if the type or stack is not defined. 
-     * 
+     * a new topic is added, throws an error if the type or stack is not defined. s
      */
     organizeTopics(){
       var tmp = []
@@ -465,7 +464,7 @@ export default {
         
       },
       /**@description Calculates the average
-       * @argument {int array} increments Represents the array of increments of a particular topic
+       * @param {int array} increments Represents the array of increments of a particular topic
        */
       calculateAverage(increments){
         var sum = 0
@@ -510,8 +509,8 @@ export default {
       /**
        * @description Validates that if a topic is slow, then is not fast or stopped anymore.
        * Its necessary to remove from other speed arrays 
-       * @argument {String} type  Rpresents the type of speed is now belonging to
-       * @argument {int} index  Represents the index of the global chartTopics array*/
+       * @param {String} type  Rpresents the type of speed is now belonging to
+       * @param {int} index  Represents the index of the global chartTopics array*/
       validateTopicSpeed(type, index){
         switch (type) {
           case 'fast':
@@ -521,7 +520,6 @@ export default {
             if (i !== -1) this.topicsSpeed.slow.splice(i, 1)
             if (j !== -1) this.topicsSpeed.stopped.splice(i, 1)
             break
-
 
           case 'slow':
             var i = this.topicsSpeed.fast.indexOf(this.chartTopics[index].name)

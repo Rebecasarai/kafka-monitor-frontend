@@ -34,7 +34,7 @@
 
       <div class="column">
         <div class="column">
-          <h5 class="title is-5">Velocidad promedio</h5>
+          <h5 class="title is-5">Mensajes Recibidos</h5>
           <div class="select">
             <select v-model="selectedTime">
               <option value="1" selected>Segundos</option>
@@ -45,7 +45,7 @@
         </div>
         <div class="column">
           <div id="counter" >
-            <p id="counterp">Mensajes recibidos: {{ this.counter }}</p>
+            <p id="counterp">Total recibidos: {{ this.counter }}</p>
             <p id="messagePerInterval">{{ this.messagesPerInterval }}
               <span v-if="selectedTime == 1">/s</span>
               <span v-else-if="selectedTime == 60">/m</span>
@@ -134,7 +134,7 @@ export default {
       date: [],
       topics: [],
       counter: 0,
-      messagesPerInterval: 1,
+      messagesPerInterval: 0,
       secondsSpent: 0,
       selectedTime: 1,
       notificationsTime: 5,
@@ -142,12 +142,11 @@ export default {
       notificationsTimeMeasure: 1,
       numeroSlice: -5,
       interval: 5000,
-      selected: null,
       selectedTopics: [],
-      newValues: [],
+      chartTopics: [],
       notiChange: false,
       timer: '',
-      controlArray: []
+      speedArray: []
     }
   },
   mounted () {
@@ -206,7 +205,7 @@ export default {
     },
     reduceTopics(){
 
-      var valuesToCheck = this.newValues.reduce((results, value) => {
+      var valuesToCheck = this.chartTopics.reduce((results, value) => {
         const nombre = value.name
         return (this.selectedTopics.indexOf(nombre) > -1) ? [...results, { value, name }] : results;
       }, []).map(value => value.value.data)
@@ -231,6 +230,10 @@ export default {
       this.counter++
       this.messagesPerInterval = parseFloat(this.counter / this.secondsSpent) * this.selectedTime
     },
+    /**
+     * @description Sets the options of the chart: Legend, xAxis and Series with reactive global variable:
+     * this.topicsNames, this.date and this.chartTopics
+     * */
     setChartdata(){
       this.multipleChart.setOption({
         legend: {
@@ -241,26 +244,34 @@ export default {
         xAxis: {
           data: this.date
         },
-         series : this.newValues
+         series : this.chartTopics
       })
     },
+    /**
+     * @description Called when topics are removed from config file, to not show them on the chart
+     * 
+     */
     closeTopicLine(msg){          
-      if(this.newValues.length !== this.data[0].topics.length){
-            for (let index = 0; index < this.newValues.length; index++) {
-              const element = this.newValues[index]
+      if(this.chartTopics.length !== this.data[0].topics.length){
+            for (let index = 0; index < this.chartTopics.length; index++) {
+              const element = this.chartTopics[index]
               if(element.name !== msg.topicName){
                 for (let j = 0; j < 5; j++) {
-                  this.newValues[index].data.push(0)
+                  this.chartTopics[index].data.push(0)
                 }
-                // this.newValues.splice(index, 1)
-                this.newValues[index].data = this.newValues[index].data.slice(this.numeroSlice)
-                console.log(this.newValues[index].data)
+                // this.chartTopics.splice(index, 1)
+                this.chartTopics[index].data = this.chartTopics[index].data.slice(this.numeroSlice)
+                console.log(this.chartTopics[index].data)
 
             }
           }
         this.setChartdata()
       }
     },
+    /**@description Process the data passed by the exabeat socket function. 
+     * This is a message sent from the backend and contains the KAFKA data
+     * @param data
+     */
     processData(data){
 
       this.calculateMessagesMedia()
@@ -273,6 +284,16 @@ export default {
       this.date = this.date.slice(this.numeroSlice)
       this.interval = this.data[0].interval
 
+      this.organizeTopics()
+      
+    },
+    /**@description Makes the chart dinamic, depending on the kafka topics information. 
+     * Updates in real time, removing or adding the lines representing the topics traffic
+     * Sets an array with the options data for the chart. This is mainly done beacuse when
+     * a new topic is added, throws an error if the type or stack is not defined. 
+     * 
+     */
+    organizeTopics(){
       var tmp = []
       var dataTopics = this.data[0].topics
 
@@ -282,19 +303,12 @@ export default {
           this.closeTopicLine(msg)
 
           if(this.topics[msg.topicName]){ // if the array of topics has a name node of the topic, ie it exists
+
             tmp[msg.topicName] = Object.assign([], this.topics[msg.topicName])
             tmp[msg.topicName].push(msg.increment)
             tmp[msg.topicName] = tmp[msg.topicName].slice(this.numeroSlice)
-            
           } else {
-            var firstTimeIncrements = []
-
-            for (let index = 0; index < 4; index++) {
-              firstTimeIncrements.push(0)
-            }
-            firstTimeIncrements.push(msg.increment)
-
-            tmp[msg.topicName] = firstTimeIncrements
+            tmp[msg.topicName] = this.firstTimeIncrements(msg)
           }
       }
 
@@ -302,8 +316,7 @@ export default {
       this.topics = tmp
       this.topicsNames = keys(this.topics)
 
-      
-      this.newValues = values(mapValues(this.topics, (data, name) => {
+      this.chartTopics = values(mapValues(this.topics, (data, name) => {
         return {
           name: name, 
           type:'line',
@@ -312,12 +325,22 @@ export default {
           data: data }
       }))
     },
+    /**@description Creates an array to fullfill the data in case a new topic is added*/
+    firstTimeIncrements(msg){
+      var firstTimeIncrements = []
+
+      for (let index = 0; index < Math.abs(this.numeroSlice); index++) {
+        firstTimeIncrements.push(0)
+      }
+      firstTimeIncrements.push(msg.increment)
+      return firstTimeIncrements
+    },
     createMultipleChart(){
 
       // initialize echarts instance with prepared DOM
       this.multipleChart = echarts.init(document.getElementById('main'))
       
-      this.multipleChart.setOption({ //Chart is setted
+      this.multipleChart.setOption({ // Chart options is setted
       title: {
           text: ''
       },
@@ -369,7 +392,6 @@ export default {
       },
       xAxis : [
           {
-              
             type: 'category',
             boundaryGap: false
           }
@@ -381,12 +403,6 @@ export default {
               axisLabel: {
                 formatter: '{value} req/'+ this.interval/1000 +'s'
               }
-          }
-      ],
-      series : [{
-              type:'line',
-              stack: '总量',
-              areaStyle: {normal: {}}
           }
       ]
     })
@@ -406,7 +422,7 @@ export default {
         return pickBy(this.topics, function(t) {
           return t.data
         })
-      } // contains only data
+      } 
     },
   }
 </script>

@@ -3,8 +3,6 @@
 > Frontend for the Kafka Monitor
 
 
-![N|Solid](/kafka-monitor-frontend/src/assets/readme-panel-2.JPG)
-
 ## Build Setup
 
 ``` bash

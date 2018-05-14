@@ -117,7 +117,7 @@
  * 
  */
 import echarts from 'echarts'
-import { keys, sortBy, filter, values, mapValues, pick, pickBy, map, has, zipObject, compact, includes, reduce, some } from 'lodash'
+import { keys, sortBy, filter, values, mapValues, pick, pickBy, map, has, zipObject, compact, includes, reduce, some, remove } from 'lodash'
 
 import Vue from 'vue'
 import VueNativeNotification from 'vue-native-notification'
@@ -180,6 +180,10 @@ export default {
 
   },
   methods: {
+    /**@description Shows a notification with a title and a body message
+     * @argument {String} titulo Represents the header of the notification
+     * @argument {String} message represents the body message
+     */
     showNotification(titulo, message){
 
       this.$notification.show(titulo, {
@@ -187,6 +191,9 @@ export default {
       }, {})
 
     },
+    /**@description Identifies what tipe of notification message should show based on the string action
+     * Can be added more types of actions
+     */
     setNotification(action){
       switch (action) {
         case 'changed':
@@ -200,9 +207,17 @@ export default {
           break
       }
     },
+    /** 
+     * @description Checks if a minimum traffic has ben reached
+     */
     checkIfReached(x){
         return x <= this.minimumTraffic
     },
+
+    /** 
+     * @description Reduces chartTopics to a specific array to use for the minimum traffic notifications
+     * 
+     */
     reduceTopics(){
 
       var valuesToCheck = this.chartTopics.reduce((results, value) => {
@@ -212,6 +227,10 @@ export default {
 
       return valuesToCheck[0]
     },
+
+    /**
+     * @description Notififies with a native notification when a minimum of increments of a topic has been reached 
+     */
     notifyMinimum(){
       
       this.timer = setInterval(function () {
@@ -221,15 +240,25 @@ export default {
         }
       }.bind(this), parseInt(this.notificationsTime * this.notificationsTimeMeasure) * 1000)
     },
+
+    /**
+     * @description counts the seconds since the web app was opened or refreshed 
+     * 
+     * */
     countSeconds(){
       setInterval(function () {
         this.secondsSpent++
       }.bind(this), 1000)
     },
+
+    /**
+     * @description Calculates the media of messages received from backend 
+     * */
     calculateMessagesMedia(){
       this.counter++
       this.messagesPerInterval = parseFloat(this.counter / this.secondsSpent) * this.selectedTime
     },
+
     /**
      * @description Sets the options of the chart: Legend, xAxis and Series with reactive global variable:
      * this.topicsNames, this.date and this.chartTopics
@@ -247,6 +276,7 @@ export default {
          series : this.chartTopics
       })
     },
+
     /**
      * @description Called when topics are removed from config file, to not show them on the chart
      * 
@@ -265,9 +295,24 @@ export default {
 
             }
           }
+        this.removeTopic(msg)
         this.setChartdata()
+        
       }
     },
+
+    /**
+     * @description Removes a topic if itsn't on the global topics array 
+    **/
+    removeTopic(msg){
+      //if(this.chartTopics.length !== this.data[0].topics.length){
+        var a = remove(this.chartTopics, function(n) {
+          console.log(n.name)
+          return n.name !== msg.topicName
+        })
+      //}
+    },
+
     /**@description Process the data passed by the exabeat socket function. 
      * This is a message sent from the backend and contains the KAFKA data
      * @param data
@@ -287,6 +332,7 @@ export default {
       this.organizeTopics()
       
     },
+
     /**@description Makes the chart dinamic, depending on the kafka topics information. 
      * Updates in real time, removing or adding the lines representing the topics traffic
      * Sets an array with the options data for the chart. This is mainly done beacuse when
@@ -325,7 +371,11 @@ export default {
           data: data }
       }))
     },
-    /**@description Creates an array to fullfill the data in case a new topic is added*/
+
+    /**
+     * @description Creates an array to fullfill the data in case a new topic is added
+     * 
+     * */
     firstTimeIncrements(msg){
       var firstTimeIncrements = []
 
@@ -335,6 +385,10 @@ export default {
       firstTimeIncrements.push(msg.increment)
       return firstTimeIncrements
     },
+
+    /**@description creates the chart to visualize the topics increments 
+     * 
+    */
     createMultipleChart(){
 
       // initialize echarts instance with prepared DOM
@@ -383,30 +437,31 @@ export default {
               title: 'Save'
             }
           }
-      },
-      grid: {
-          left: '3%',
-          right: '4%',
-          bottom: '3%',
-          containLabel: true
-      },
-      xAxis : [
-          {
-            type: 'category',
-            boundaryGap: false
-          }
-      ],
-      yAxis : [
-          {
-            type: 'value',
-              boundaryGap: [0, '30%'],
-              axisLabel: {
-                formatter: '{value} req/'+ this.interval/1000 +'s'
-              }
-          }
-      ]
-    })
-
+        },
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '3%',
+            containLabel: true
+        },
+        xAxis : [
+            {
+              type: 'category',
+              boundaryGap: false
+            }
+        ],
+        yAxis : [
+            {
+              type: 'value',
+                boundaryGap: [0, '30%'],
+                axisLabel: {
+                  formatter: '{value} req/'+ this.interval/1000 +'s'
+                }
+            }
+        ]
+      })
+      
+      /** @description for responsive design */
       this.$nextTick(() => {
         window.addEventListener('resize', () => {
           [this.multipleChart].forEach(c => {

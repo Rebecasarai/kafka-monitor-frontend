@@ -1,107 +1,89 @@
 <template>
-  <div id="app" class="container">
-    <div class="columns">
-
-      <div class="column">
-        <h2 class="title is-2">Real time Kafka Monitor</h2>
-        <div id="main" style="min-witdh:100%; min-height:400px; "></div>
+   <div id="app" class="container">
+      <div class="columns">
+         <div class="column">
+            <h2 class="title is-2">Real time Kafka Monitor</h2>
+            <div id="main" style="min-witdh:100%; min-height:400px; "></div>
+         </div>
       </div>
-    </div>
-
-
-    <div class="columns">
-      <div class="column">
-        <div id="trafficpanel" >
-          <aside>
-            <h5 class="title is-5">Diferencias de mensajes</h5>
-              <div class="column is-half jobstraffic-green" style="background-color: #87d887 !important;">
-                <p>Rapidos</p>
-                <ul class="menu-list is-size-7">
-
-                  <!--<div class="active-users" v-for="user in activeUsers">
-                  <h3>{{user.name}}</h3>
-                  </div>-->
-                  <li  v-for="topic in fastTopics" :key="topic">
-                    <p v-bind:id="topic.name">{{ topic.name }}</p>
-                  </li>
-                </ul>
-              </div>
-              <div class="column is-half jobstraffic-yellow" style="background-color: #fbfba1 !important;">Lentos</div>
-              <div class="column is-half jobstraffic-red" style="background-color: #ef9090 !important;">Parados</div>
-          </aside>
-        </div>
-      </div>
-
-      <div class="column">
-        <div class="column">
-          <h5 class="title is-5">Mensajes Recibidos</h5>
-          <div class="select">
-            <select v-model="selectedTime">
-              <option value="1" selected>Segundos</option>
-              <option value="60">Minutos</option>
-              <option value="3600">Horas</option>
-            </select>
-          </div>
-        </div>
-        <div class="column">
-          <div id="counter" >
-            <p id="counterp">Total recibidos: {{ this.counter }}</p>
-            <p id="messagePerInterval">{{ this.messagesPerInterval }}
-              <span v-if="selectedTime == 1">/s</span>
-              <span v-else-if="selectedTime == 60">/m</span>
-              <span v-else>/h</span>
-            </p>
-            <p id="secondsspent"> {{ this.secondsSpent/this.selectedTime }} 
-              <span v-if="selectedTime==1">Segundos</span> 
-              <span v-else-if="selectedTime==60">Minutos</span>
-              <span v-else>horas</span></p>
-          </div>
-
-        </div>
-      </div>
-
-      <div class="column">
-        
-
-        <!--<div class="columns">-->
-        <div class="column">
-        
-        <h5 class="title is-5" >Notificaciones</h5>
-
-            <h3>Cuando la media del trafico sea</h3>
-            <input class="input" v-model.number="minimumTraffic" type="number" placeholder="2" value="2">
-            
-
-            <h3>En el topic</h3>
-
-
-            <multiselect 
-              v-model="selectedTopics" 
-              :options="topicsNames"
-              :multiple="true"
-              >
-            </multiselect>
-
-        </div>
-          <div class="column">
-            <h4>Notificarme cada:</h4>
-            <input class="input" type="number" v-model="notificationsTime" placeholder="2" value="2">  
-          </div>
-
-          <div class="column">
-            <div class="select">
-              <select v-model="notificationsTimeMeasure">
-                <option value="1" >Segundos</option>
-                <option value="60" selected>Minutos</option>
-                <option value="3600">Horas</option>
-              </select>
+      <div class="columns">
+         <div class="column">
+            <div id="trafficpanel" >
+               <aside>
+                  <h5 class="title is-5">Diferencias de mensajes</h5>
+                  <div class="column is-half jobstraffic-green" style="background-color: #87d887 !important;">
+                     <p>Rapidos</p>
+                     <ul class="menu-list is-size-7">
+                        <!--<div class="active-users" v-for="user in activeUsers">
+                           <h3>{{user.name}}</h3>
+                           </div>-->
+                        <li  v-for="topic in fastTopics" :key="topic">
+                           <p v-bind:id="topic.name">{{ topic.name }}</p>
+                        </li>
+                     </ul>
+                  </div>
+                  <div class="column is-half jobstraffic-yellow" style="background-color: #fbfba1 !important;">Lentos</div>
+                  <div class="column is-half jobstraffic-red" style="background-color: #ef9090 !important;">Parados</div>
+               </aside>
             </div>
-          </div>
-        
+         </div>
+         <div class="column">
+            <div class="column">
+               <h5 class="title is-5">Mensajes Recibidos</h5>
+               <div class="select">
+                  <select v-model="selectedTime">
+                     <option value="1" selected>Segundos</option>
+                     <option value="60">Minutos</option>
+                     <option value="3600">Horas</option>
+                  </select>
+               </div>
+            </div>
+            <div class="column">
+               <div id="counter" >
+                  <p id="counterp">Total recibidos: {{ this.counter }}</p>
+                  <p id="messagePerInterval">{{ this.messagesPerInterval }}
+                     <span v-if="selectedTime == 1">/s</span>
+                     <span v-else-if="selectedTime == 60">/m</span>
+                     <span v-else>/h</span>
+                  </p>
+                  <p id="secondsspent"> {{ this.secondsSpent/this.selectedTime }} 
+                     <span v-if="selectedTime==1">Segundos</span> 
+                     <span v-else-if="selectedTime==60">Minutos</span>
+                     <span v-else>horas</span>
+                  </p>
+               </div>
+            </div>
+         </div>
+         <div class="column">
+            <!--<div class="columns">-->
+            <div class="column">
+               <h5 class="title is-5" >Notificaciones</h5>
+               <h3>Cuando la media del trafico sea</h3>
+               <input class="input" v-model.number="minimumTraffic" type="number" placeholder="2" value="2">
+               <h3>En el topic</h3>
+               <multiselect 
+                  v-model="selectedTopics" 
+                  :options="topicsNames"
+                  :multiple="true"
+                  >
+               </multiselect>
+            </div>
+            <div class="column">
+               <h4>Notificarme cada:</h4>
+               <input class="input" type="number" v-model="notificationsTime" placeholder="2" value="2">  
+            </div>
+            <div class="column">
+               <div class="select">
+                  <select v-model="notificationsTimeMeasure">
+                     <option value="1" >Segundos</option>
+                     <option value="60" selected>Minutos</option>
+                     <option value="3600">Horas</option>
+                  </select>
+               </div>
+            </div>
+         </div>
       </div>
-
-    </div>
-  </div>
+   </div>
 </template>
 
 <script>
@@ -460,7 +442,7 @@ export default {
             }
         ]
       })
-      
+
       /** @description for responsive design */
       this.$nextTick(() => {
         window.addEventListener('resize', () => {

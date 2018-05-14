@@ -225,7 +225,9 @@ export default {
       }.bind(this), parseInt(this.notificationsTime * this.notificationsTimeMeasure) * 1000)
     },
     countSeconds(){
-      setInterval(this.secondsSpent++, 1000);
+      setInterval(function () {
+        this.secondsSpent++
+      }.bind(this), 1000)
     },
     setChartdata(){
       this.multipleChart.setOption({
@@ -292,8 +294,8 @@ export default {
 
       // initialize echarts instance with prepared DOM
       this.multipleChart = echarts.init(document.getElementById('main'))
-      /*NEW CHART*/
-      this.multipleChart.setOption({
+      
+      this.multipleChart.setOption({ //Chart is setted
       title: {
           text: ''
       },
@@ -379,10 +381,10 @@ export default {
     },
     computed: { 
       fastTopics: function() {
-        return pickBy(this.topics, function(u) {
-          return u.data
+        return pickBy(this.topics, function(t) {
+          return t.data
         })
-      } // contains only 
+      } // contains only data
     },
   }
 </script>

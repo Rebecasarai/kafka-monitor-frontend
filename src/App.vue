@@ -229,6 +229,9 @@ export default {
         this.secondsSpent++
       }.bind(this), 1000)
     },
+    calculateMedia(){
+      this.messagesPerInterval = parseInt(this.counter / this.secondsSpent) * this.selectedTime
+    },
     setChartdata(){
       this.multipleChart.setOption({
         legend: {

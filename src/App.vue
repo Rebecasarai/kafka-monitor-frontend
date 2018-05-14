@@ -131,8 +131,8 @@ export default {
       speedArray: []
     }
   },
-  /**
-   * @description Once the app is created this is executed 
+
+  /** @description Once the app is created this is executed 
    * */
   mounted () {
       Vue.use(VueNativeNotification, {
@@ -144,16 +144,22 @@ export default {
     this.createMultipleChart()
     this.notifyMinimum()
   },
+
+  /**@description Socket functions, used to comunicate from backend
+   * exabeat receives the messages with kafka topics increments data
+   * exabeatTopicsChanged notifies in real time when config file is modified
+  */
   sockets: {
     exabeat (data) {
         this.processData(data)
         this.setChartdata()
-
     },
     exabeatTopicsChanged(data){
       this.setNotification(data)  
     }
   },
+
+  /**@description Watches for value changes on these  variables */
   watch:{
     notificationsTime: function(){
       clearInterval(this.timer)
@@ -446,7 +452,7 @@ export default {
         ]
       })
 
-      /** @description for responsive design */
+      /** @description for responsive design, recreates the chart each time the screen width is changed */
       this.$nextTick(() => {
         window.addEventListener('resize', () => {
           [this.multipleChart].forEach(c => {

@@ -231,7 +231,7 @@ export default {
     },
     calculateMessagesMedia(){
       this.counter++
-      this.messagesPerInterval = parseInt(this.counter / this.secondsSpent) * this.selectedTime
+      this.messagesPerInterval = parseFloat(this.counter / this.secondsSpent) * this.selectedTime
     },
     setChartdata(){
       this.multipleChart.setOption({

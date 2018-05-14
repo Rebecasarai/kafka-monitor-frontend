@@ -48,7 +48,7 @@
         </div>
         <div class="column">
           <div id="counter" >
-            <p id="counterp">Recibidos totales: {{ this.counter }}</p>
+            <p id="counterp">Mensajes recibidos: {{ this.counter }}</p>
             <p id="messagePerInterval">{{ this.messagesPerInterval }}
               <span v-if="selectedTime == 1">/s</span>
               <span v-else-if="selectedTime == 60">/m</span>
@@ -153,14 +153,14 @@ export default {
     }
   },
   mounted () {
+      Vue.use(VueNativeNotification, {
+        requestOnNotify: true
+      })
 
-    Vue.use(VueNativeNotification, {
-      requestOnNotify: true
-    })
+    this.countSeconds()
 
     this.createMultipleChart()
     this.notifyMinimum()
-
   },
   sockets: {
     exabeat (data) {
@@ -224,7 +224,9 @@ export default {
         }
       }.bind(this), parseInt(this.notificationsTime * this.notificationsTimeMeasure) * 1000)
     },
-
+    countSeconds(){
+      setInterval(this.secondsSpent++, 1000);
+    },
     setChartdata(){
       this.multipleChart.setOption({
         legend: {

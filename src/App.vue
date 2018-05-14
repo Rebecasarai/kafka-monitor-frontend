@@ -5,9 +5,6 @@
       <div class="column">
         <h2 class="title is-2">Real time Kafka Monitor</h2>
         <div id="main" style="min-witdh:100%; min-height:400px; "></div>
-        <div></div>
-        <div></div>
-        <div></div>
       </div>
     </div>
 
@@ -271,19 +268,21 @@ export default {
             tmp[msg.topicName] = tmp[msg.topicName].slice(this.numeroSlice)
             
           } else {
-            let firstTimeIncrements = []
-            for(s in 4){
+            var firstTimeIncrements = []
+
+            for (let index = 0; index < 4; index++) {
               firstTimeIncrements.push(0)
             }
             firstTimeIncrements.push(msg.increment)
 
-            tmp[msg.topicName] = [0,0,0,0, msg.increment]
+            tmp[msg.topicName] = firstTimeIncrements
           }
         }
 
       console.log(JSON.stringify(keys(tmp))+'\n'+JSON.stringify(values(tmp)))
       this.topics = tmp
       this.topicsNames = keys(this.topics)
+
       
       this.newValues = values(mapValues(this.topics, (data, name) => {
         return {

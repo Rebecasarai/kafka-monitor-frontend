@@ -131,6 +131,9 @@ export default {
       speedArray: []
     }
   },
+  /**
+   * @description Once the app is created this is executed 
+   * */
   mounted () {
       Vue.use(VueNativeNotification, {
         requestOnNotify: true

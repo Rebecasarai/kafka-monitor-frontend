@@ -229,7 +229,8 @@ export default {
         this.secondsSpent++
       }.bind(this), 1000)
     },
-    calculateMedia(){
+    calculateMessagesMedia(){
+      this.counter++
       this.messagesPerInterval = parseInt(this.counter / this.secondsSpent) * this.selectedTime
     },
     setChartdata(){
@@ -247,7 +248,7 @@ export default {
     },
     processData(data){
 
-      this.counter++
+      this.calculateMessagesMedia()
       const now = new Date()
       const strDate = [now.getHours(), now.getMinutes()].join(':')
 

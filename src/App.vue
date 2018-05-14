@@ -7,28 +7,38 @@
          </div>
       </div>
       <div class="columns">
-         <div class="column">
+         <div class="column bottom-panel">
             <div id="trafficpanel" >
                <aside>
                   <h5 class="title is-5">Diferencias de mensajes</h5>
-                  <div class="column is-half jobstraffic-green" style="background-color: #87d887 !important;">
-                     <p>Rapidos</p>
+                  <div class="column jobstraffic-green" >
+                     <p>Fast</p>
                      <ul class="menu-list is-size-7">
-                        <!--<div class="active-users" v-for="user in activeUsers">
-                           <h3>{{user.name}}</h3>
-                           </div>-->
-                        <li  v-for="topic in fastTopics" :key="topic">
-                           <p v-bind:id="topic.name">{{ topic.name }}</p>
+                        <li  v-for="topic in topicsSpeed.fast" :key="topic">
+                           <p v-bind:id="topic">{{ topic }}</p>
                         </li>
                      </ul>
                   </div>
-                  <div class="column is-half jobstraffic-yellow" style="background-color: #fbfba1 !important;">Lentos</div>
-                  <div class="column is-half jobstraffic-red" style="background-color: #ef9090 !important;">Parados</div>
+                  <div class="column  jobstraffic-yellow" >
+                    <p>Slow</p>
+                    <ul class="menu-list is-size-7">
+                      <li  v-for="topic in topicsSpeed.slow" :key="topic">
+                          <p v-bind:id="topic">{{ topic }}</p>
+                      </li>
+                    </ul>
+                  </div>
+                  <div class="column is jobstraffic-red" >
+                    <p>Stopped</p>
+                    <ul class="menu-list is-size-7">
+                      <li v-for="topic in topicsSpeed.stopped" :key="topic">
+                          <p v-bind:id="topic">{{ topic }}</p>
+                      </li>
+                    </ul>
+                  </div>
                </aside>
             </div>
          </div>
-         <div class="column">
-            <div class="column">
+         <div class="column bottom-panel">
                <h5 class="title is-5">Mensajes Recibidos</h5>
                <div class="select">
                   <select v-model="selectedTime">
@@ -37,8 +47,6 @@
                      <option value="3600">Horas</option>
                   </select>
                </div>
-            </div>
-            <div class="column">
                <div id="counter" >
                   <p id="counterp">Total recibidos: {{ this.counter }}</p>
                   <p id="messagePerInterval">{{ this.messagesPerInterval }}
@@ -53,10 +61,8 @@
                   </p>
                </div>
             </div>
-         </div>
-         <div class="column">
+         <div class="column bottom-panel">
             <!--<div class="columns">-->
-            <div class="column">
                <h5 class="title is-5" >Notificaciones</h5>
                <h3>Cuando la media del trafico sea</h3>
                <input class="input" v-model.number="minimumTraffic" type="number" placeholder="2" value="2">
@@ -67,12 +73,9 @@
                   :multiple="true"
                   >
                </multiselect>
-            </div>
-            <div class="column">
                <h4>Notificarme cada:</h4>
                <input class="input" type="number" v-model="notificationsTime" placeholder="2" value="2">  
-            </div>
-            <div class="column">
+            
                <div class="select">
                   <select v-model="notificationsTimeMeasure">
                      <option value="1" >Segundos</option>
@@ -80,7 +83,6 @@
                      <option value="3600">Horas</option>
                   </select>
                </div>
-            </div>
          </div>
       </div>
    </div>
@@ -99,7 +101,7 @@
  * 
  */
 import echarts from 'echarts'
-import { keys, sortBy, filter, values, mapValues, pick, pickBy, map, has, zipObject, compact, includes, reduce, some, remove } from 'lodash'
+import { keys, sortBy, filter, values, mapValues, pick, pickBy, map, has, zipObject, compact, includes, reduce, some, remove, uniq  } from 'lodash'
 
 import Vue from 'vue'
 import VueNativeNotification from 'vue-native-notification'
@@ -128,7 +130,7 @@ export default {
       chartTopics: [],
       notiChange: false,
       timer: '',
-      speedArray: []
+      topicsSpeed: {fast: [], slow:[], stopped: [] }
     }
   },
 
@@ -153,6 +155,7 @@ export default {
     exabeat (data) {
         this.processData(data)
         this.setChartdata()
+        this.calculateSpeed()
     },
     exabeatTopicsChanged(data){
       this.setNotification(data)  
@@ -288,7 +291,6 @@ export default {
           }
         this.removeTopic(msg)
         this.setChartdata()
-        
       }
     },
 
@@ -461,6 +463,88 @@ export default {
         })
       })
         
+      },
+      /**@description Calculates the average
+       * @argument {int array} increments Represents the array of increments of a particular topic
+       */
+      calculateAverage(increments){
+        var sum = 0
+        for( var i = 0; i < increments.length; i++ ){
+            sum += parseInt( increments[i], 10 ) // add the base
+        }
+
+        return sum/increments.length
+      },
+      /**@description Calculates the average of increments in topics, assigning them the category based on the average.
+       */
+      calculateSpeed(){
+        for (let index = 0; index < this.chartTopics.length; index++) {
+          const increments = this.chartTopics[index].data
+          var avg = this.calculateAverage(increments)
+          this.asignSpeed(avg, index)
+        }
+      },
+      /**
+       * @description Determines the category of speed of a topic based on its average increments
+       */
+      asignSpeed(avg, index){
+        if(avg < 1){
+
+            this.topicsSpeed.stopped.push(this.chartTopics[index].name)
+            this.topicsSpeed.stopped = uniq(this.topicsSpeed.stopped)
+            this.validateTopicSpeed('stopped', index)
+
+          }else if(avg < 10){
+
+            this.topicsSpeed.slow.push(this.chartTopics[index].name)
+            this.topicsSpeed.slow = uniq(this.topicsSpeed.slow)
+            this.validateTopicSpeed('slow', index)
+           
+          }else{
+            this.topicsSpeed.fast.push(this.chartTopics[index].name)
+            this.topicsSpeed.fast = uniq(this.topicsSpeed.fast)
+            this.validateTopicSpeed('fast', index)
+        }
+      },
+
+      /**
+       * @description Validates that if a topic is slow, then is not fast or stopped anymore.
+       * Its necessary to remove from other speed arrays 
+       * @argument {String} type  Rpresents the type of speed is now belonging to
+       * @argument {int} index  Represents the index of the global chartTopics array*/
+      validateTopicSpeed(type, index){
+        switch (type) {
+          case 'fast':
+            var i = this.topicsSpeed.slow.indexOf(this.chartTopics[index].name)
+            var j = this.topicsSpeed.stopped.indexOf(this.chartTopics[index].name)
+
+            if (i !== -1) this.topicsSpeed.slow.splice(i, 1)
+            if (j !== -1) this.topicsSpeed.stopped.splice(i, 1)
+            break
+
+
+          case 'slow':
+            var i = this.topicsSpeed.fast.indexOf(this.chartTopics[index].name)
+            var j = this.topicsSpeed.stopped.indexOf(this.chartTopics[index].name)
+
+            if (i !== -1) this.topicsSpeed.fast.splice(i, 1)
+            if (j !== -1) this.topicsSpeed.stopped.splice(i, 1)
+            
+            break
+
+          case 'stopped':
+            var i = this.topicsSpeed.fast.indexOf(this.chartTopics[index].name)
+            var j = this.topicsSpeed.slow.indexOf(this.chartTopics[index].name)
+
+            if (i !== -1) this.topicsSpeed.fast.splice(i, 1)
+            if (j !== -1) this.topicsSpeed.slow.splice(i, 1)
+            break
+        
+          default:
+
+            break
+        }
+
       }
     },
     computed: { 
@@ -477,6 +561,25 @@ export default {
 #app {
   margin-top: 30px
 }
+.jobstraffic-green{
+  background-color: rgba(135, 216, 135, 0.49) !important; 
+  border-radius: 5px;
+}
+
+.jobstraffic-yellow{
+  background-color: #fbfba1 !important;
+  border-radius: 5px;
+}
+
+.jobstraffic-red{
+  background-color: #ef9090 !important;
+  border-radius: 5px;
+}
+.bottom-panel{
+  margin: 1% 3%;
+}
+
+
 </style>
 
 

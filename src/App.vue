@@ -117,7 +117,7 @@
  * 
  */
 import echarts from 'echarts'
-import { keys, sortBy, filter, values, mapValues, pick, pickBy, map, zipObject, compact, includes, reduce, some } from 'lodash'
+import { keys, sortBy, filter, values, mapValues, pick, pickBy, map, has, zipObject, compact, includes, reduce, some } from 'lodash'
 
 import Vue from 'vue'
 import VueNativeNotification from 'vue-native-notification'
@@ -146,7 +146,8 @@ export default {
       selectedTopics: [],
       newValues: [],
       notiChange: false,
-      timer: ''
+      timer: '',
+      controlArray: []
     }
   },
   mounted () {
@@ -243,6 +244,23 @@ export default {
          series : this.newValues
       })
     },
+    closeTopicLine(msg){          
+      if(this.newValues.length !== this.data[0].topics.length){
+            for (let index = 0; index < this.newValues.length; index++) {
+              const element = this.newValues[index]
+              if(element.name !== msg.topicName){
+                for (let j = 0; j < 5; j++) {
+                  this.newValues[index].data.push(0)
+                }
+                // this.newValues.splice(index, 1)
+                this.newValues[index].data = this.newValues[index].data.slice(this.numeroSlice)
+                console.log(this.newValues[index].data)
+
+            }
+          }
+        this.setChartdata()
+      }
+    },
     processData(data){
 
       this.calculateMessagesMedia()
@@ -258,10 +276,11 @@ export default {
       var tmp = []
       var dataTopics = this.data[0].topics
 
-        for(let i in this.data[0].topics){
+      for(let i in this.data[0].topics){
 
           const msg = this.data[0].topics[i] // message of each topic with its increment
-          
+          this.closeTopicLine(msg)
+
           if(this.topics[msg.topicName]){ // if the array of topics has a name node of the topic, ie it exists
             tmp[msg.topicName] = Object.assign([], this.topics[msg.topicName])
             tmp[msg.topicName].push(msg.increment)
@@ -277,7 +296,7 @@ export default {
 
             tmp[msg.topicName] = firstTimeIncrements
           }
-        }
+      }
 
       console.log(JSON.stringify(keys(tmp))+'\n'+JSON.stringify(values(tmp)))
       this.topics = tmp

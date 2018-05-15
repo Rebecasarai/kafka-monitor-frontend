@@ -572,17 +572,18 @@ export default {
 }
 .jobstraffic-green{
   background-color: rgba(135, 216, 135, 0.49) !important; 
-  border-radius: 5px;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
 }
 
 .jobstraffic-yellow{
   background-color: #fbfba1 !important;
-  border-radius: 5px;
 }
 
 .jobstraffic-red{
   background-color: #ef9090 !important;
-  border-radius: 5px;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
 }
 .bottom-panel{
   margin: 1% 3%;

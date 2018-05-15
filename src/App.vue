@@ -519,7 +519,7 @@ export default {
             var j = this.topicsSpeed.stopped.indexOf(this.chartTopics[index].name)
 
             if (i !== -1) this.topicsSpeed.slow.splice(i, 1)
-            if (j !== -1) this.topicsSpeed.stopped.splice(i, 1)
+            if (j !== -1) this.topicsSpeed.stopped.splice(j, 1)
             break
 
           case 'slow':
@@ -527,7 +527,7 @@ export default {
             var j = this.topicsSpeed.stopped.indexOf(this.chartTopics[index].name)
 
             if (i !== -1) this.topicsSpeed.fast.splice(i, 1)
-            if (j !== -1) this.topicsSpeed.stopped.splice(i, 1)
+            if (j !== -1) this.topicsSpeed.stopped.splice(j, 1)
             
             break
 
@@ -536,7 +536,7 @@ export default {
             var j = this.topicsSpeed.slow.indexOf(this.chartTopics[index].name)
 
             if (i !== -1) this.topicsSpeed.fast.splice(i, 1)
-            if (j !== -1) this.topicsSpeed.slow.splice(i, 1)
+            if (j !== -1) this.topicsSpeed.slow.splice(j, 1)
             break
         
           default:

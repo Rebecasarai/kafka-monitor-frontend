@@ -294,8 +294,8 @@ export default {
             const element = this.chartTopics[index]
             if(element.name !== msg.topicName){
               
-              for (let j = 0; j < 5; j++) {
-                this.chartTopics[index].data.push(0)
+              for (let j = 0; j < Math.abs(this.numeroSlice); j++) {
+                this.chartTopics[index].data.push(0) 
               }
               this.chartTopics[index].data = this.chartTopics[index].data.slice(this.numeroSlice)
               // this.removeTopic(msg, index)
@@ -501,20 +501,20 @@ export default {
       asignSpeed(avg, index){
         if(avg < 1){
 
-            this.topicsSpeed.stopped.push(this.chartTopics[index].name)
-            this.topicsSpeed.stopped = uniq(this.topicsSpeed.stopped)
-            this.validateTopicSpeed('stopped', index)
+          this.topicsSpeed.stopped.push(this.chartTopics[index].name)
+          this.topicsSpeed.stopped = uniq(this.topicsSpeed.stopped)
+          this.validateTopicSpeed('stopped', index)
 
-          }else if(avg < 10){
+        }else if(avg < 10){
 
-            this.topicsSpeed.slow.push(this.chartTopics[index].name)
-            this.topicsSpeed.slow = uniq(this.topicsSpeed.slow)
-            this.validateTopicSpeed('slow', index)
-           
-          }else{
-            this.topicsSpeed.fast.push(this.chartTopics[index].name)
-            this.topicsSpeed.fast = uniq(this.topicsSpeed.fast)
-            this.validateTopicSpeed('fast', index)
+          this.topicsSpeed.slow.push(this.chartTopics[index].name)
+          this.topicsSpeed.slow = uniq(this.topicsSpeed.slow)
+          this.validateTopicSpeed('slow', index)
+          
+        }else{
+          this.topicsSpeed.fast.push(this.chartTopics[index].name)
+          this.topicsSpeed.fast = uniq(this.topicsSpeed.fast)
+          this.validateTopicSpeed('fast', index)
         }
       },
 
@@ -539,7 +539,6 @@ export default {
 
             if (i !== -1) this.topicsSpeed.fast.splice(i, 1)
             if (j !== -1) this.topicsSpeed.stopped.splice(j, 1)
-            
             break
 
           case 'stopped':
@@ -588,8 +587,6 @@ export default {
 .bottom-panel{
   margin: 1% 3%;
 }
-
-
 </style>
 
 

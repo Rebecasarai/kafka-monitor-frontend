@@ -100,6 +100,7 @@
  * Vue apps have a life lifecycle, in "mounted()", is posible to execute code once the app is ready and the template is loaded
  * 
  */
+/* eslint-disable */
 import echarts from 'echarts'
 import { keys, sortBy, filter, values, mapValues, pick, pickBy, map, has, zipObject, compact, includes, reduce, some, remove, uniq  } from 'lodash'
 

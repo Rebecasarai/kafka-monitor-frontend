@@ -12,7 +12,7 @@
                <aside>
                   <h5 class="title is-5">Topics Speed</h5>
                   <div class="column jobstraffic-green" >
-                     <p>Fast</p>
+                     <h6 class="title is-6">Fast</h6>
                      <ul class="menu-list is-size-7">
                         <li  v-for="topic in topicsSpeed.fast" :key="topic">
                            <p v-bind:id="topic">{{ topic }}</p>
@@ -20,7 +20,7 @@
                      </ul>
                   </div>
                   <div class="column  jobstraffic-yellow" >
-                    <p>Slow</p>
+                    <h6 class="title is-6">Slow</h6>
                     <ul class="menu-list is-size-7">
                       <li  v-for="topic in topicsSpeed.slow" :key="topic">
                           <p v-bind:id="topic">{{ topic }}</p>
@@ -28,7 +28,7 @@
                     </ul>
                   </div>
                   <div class="column is jobstraffic-red" >
-                    <p>Stopped</p>
+                    <h6 class="title is-6">Stopped</h6>
                     <ul class="menu-list is-size-7">
                       <li v-for="topic in topicsSpeed.stopped" :key="topic">
                           <p v-bind:id="topic">{{ topic }}</p>
@@ -347,18 +347,18 @@ export default {
 
       for(let i in dataTopics){
 
-          const msg = dataTopics[i] // message of each topic with its increment
-          this.closeTopicLine(msg)
+        const msg = dataTopics[i] // message of each topic with its increment
+        this.closeTopicLine(msg)
 
-          if(this.topics[msg.topicName]){ // if the array of topics has a key name node of the topic, i.e. it exists
+        if(this.topics[msg.topicName]){ // if the array of topics has a key name node of the topic, i.e. it exists
 
-            tmp[msg.topicName] = Object.assign([], this.topics[msg.topicName])
-            tmp[msg.topicName].push(msg.increment)
-            tmp[msg.topicName] = tmp[msg.topicName].slice(this.numeroSlice)
+          tmp[msg.topicName] = Object.assign([], this.topics[msg.topicName])
+          tmp[msg.topicName].push(msg.increment)
+          tmp[msg.topicName] = tmp[msg.topicName].slice(this.numeroSlice)
 
-          } else {
-            tmp[msg.topicName] = this.firstTimeIncrements(msg)
-          }
+        } else {
+          tmp[msg.topicName] = this.firstTimeIncrements(msg)
+        }
       }
 
       // console.log(JSON.stringify(keys(tmp))+'\n'+JSON.stringify(values(tmp)))
@@ -405,13 +405,13 @@ export default {
         y2: 100
       },
       tooltip : {
-          trigger: 'axis',
-          axisPointer: {
-              type: 'cross',
-              label: {
-                  backgroundColor: '#6a7985'
-              }
-          }
+        trigger: 'axis',
+        axisPointer: {
+            type: 'cross',
+            label: {
+                backgroundColor: '#6a7985'
+            }
+        }
       },
         toolbox: {
           show: true,
@@ -442,25 +442,25 @@ export default {
           }
         },
         grid: {
-            left: '3%',
-            right: '4%',
-            bottom: '3%',
-            containLabel: true
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          containLabel: true
         },
         xAxis : [
-            {
-              type: 'category',
-              boundaryGap: false
-            }
+          {
+            type: 'category',
+            boundaryGap: false
+          }
         ],
         yAxis : [
-            {
-              type: 'value',
-                boundaryGap: [0, '30%'],
-                axisLabel: {
-                  formatter: '{value} req/'+ this.interval/1000 +'s'
-                }
+          {
+            type: 'value',
+            boundaryGap: [0, '30%'],
+            axisLabel: {
+              formatter: '{value} req/'+ this.interval/1000 +'s'
             }
+          }
         ]
       })
 
@@ -475,7 +475,8 @@ export default {
         
       },
       /**@description Calculates the average
-       * @param {int array} increments Represents the array of increments of a particular topic
+       * @param {array} increments Represents the array of increments of a particular topic
+       * @returns {int} Representing the average
        */
       calculateAverage(increments){
         var sum = 0

@@ -102,7 +102,7 @@
  */
 /* eslint-disable */
 import echarts from 'echarts'
-import { keys, sortBy, filter, values, mapValues, pick, pickBy, map, has, zipObject, compact, includes, reduce, some, remove, uniq  } from 'lodash'
+import { keys, values, mapValues, pickBy, map, has, reduce, some, remove, uniq  } from 'lodash'
 
 import Vue from 'vue'
 import VueNativeNotification from 'vue-native-notification'
@@ -142,22 +142,28 @@ export default {
         requestOnNotify: true
       })
 
-    this.countSeconds()
+    this.countSeconds() // starts counting the seconds since the app charges
 
-    this.createMultipleChart()
-    this.notifyMinimum()
+    this.createMultipleChart() // cerates the chart
+    this.notifyMinimum() // to notifiy if a topic has reached a minimum traffic 
   },
 
   /**@description Socket functions, used to comunicate from backend
    * exabeat receives the messages with kafka topics increments data
    * exabeatTopicsChanged notifies in real time when config file is modified
+   * 
   */
   sockets: {
+    /**
+     * @param {Object} data Represents the message from the server with the topics data */
     exabeat (data) {
         this.processData(data)
         this.setChartdata()
         this.calculateSpeed()
     },
+    /**
+     * @param {String} data Represents an action that ocurred from the backend, like changes 
+     * on the config file */
     exabeatTopicsChanged(data){
       this.setNotification(data)  
     }
@@ -210,8 +216,11 @@ export default {
     },
 
     /** 
-     * @description Reduces chartTopics to a specific array to use for the minimum traffic notifications
-     * 
+     * @description Reduces chartTopics to a specific array to use from the selected topics
+     * data for the minimum traffic notifications. If topic 1 and topic 2 is selected from 
+     * the panel, then this function will reduce from the current global chartTopics to
+     * only the thata of those selected topics
+     * @returns {array} valuesTocheck, representing the array reduced  
      */
     reduceTopics(){
 
@@ -274,37 +283,37 @@ export default {
 
     /**
      * @description Called when topics are removed from config file, to not show them on the chart
-     * 
+     * And refill the data array of that topic with 0s
+     * If the global variable of topics doesn't have the same lenght, then go trough the topics
+     * and if one of those topics name is not equal to the one receiving from the serve,
+     * it fills its data array of increments to 0 and later on removes it
      */
     closeTopicLine(msg){          
       if(this.chartTopics.length !== this.data[0].topics.length){
-            for (let index = 0; index < this.chartTopics.length; index++) {
-              const element = this.chartTopics[index]
-              if(element.name !== msg.topicName){
-                for (let j = 0; j < 5; j++) {
-                  this.chartTopics[index].data.push(0)
-                }
-                // this.chartTopics.splice(index, 1)
-                this.chartTopics[index].data = this.chartTopics[index].data.slice(this.numeroSlice)
-                console.log(this.chartTopics[index].data)
-
+          for (let index = 0; index < this.chartTopics.length; index++) {
+            const element = this.chartTopics[index]
+            if(element.name !== msg.topicName){
+              
+              for (let j = 0; j < 4; j++) {
+                this.chartTopics[index].data.push(0)
+              }
+              this.chartTopics[index].data = this.chartTopics[index].data.slice(this.numeroSlice)
+              // this.removeTopic(msg, index)
             }
           }
-        this.removeTopic(msg)
         this.setChartdata()
       }
     },
 
     /**
-     * @description Removes a topic if itsn't on the global topics array 
+     * @description Removes a topic based on its index
+     * 
     **/
-    removeTopic(msg){
-      //if(this.chartTopics.length !== this.data[0].topics.length){
-        var a = remove(this.chartTopics, function(n) {
-          console.log(n.name)
-          return n.name !== msg.topicName
-        })
-      //}
+    removeTopic(msg, index){
+
+      this.chartTopics.splice(index, 1)
+      console.log(this.chartTopics)
+      this.chartTopics = this.chartTopics.slice(this.numeroSlice)
     },
 
     /**@description Process the data passed by the exabeat socket function. 
@@ -336,22 +345,23 @@ export default {
       var tmp = []
       var dataTopics = this.data[0].topics
 
-      for(let i in this.data[0].topics){
+      for(let i in dataTopics){
 
-          const msg = this.data[0].topics[i] // message of each topic with its increment
+          const msg = dataTopics[i] // message of each topic with its increment
           this.closeTopicLine(msg)
 
-          if(this.topics[msg.topicName]){ // if the array of topics has a name node of the topic, ie it exists
+          if(this.topics[msg.topicName]){ // if the array of topics has a key name node of the topic, i.e. it exists
 
             tmp[msg.topicName] = Object.assign([], this.topics[msg.topicName])
             tmp[msg.topicName].push(msg.increment)
             tmp[msg.topicName] = tmp[msg.topicName].slice(this.numeroSlice)
+
           } else {
             tmp[msg.topicName] = this.firstTimeIncrements(msg)
           }
       }
 
-      console.log(JSON.stringify(keys(tmp))+'\n'+JSON.stringify(values(tmp)))
+      // console.log(JSON.stringify(keys(tmp))+'\n'+JSON.stringify(values(tmp)))
       this.topics = tmp
       this.topicsNames = keys(this.topics)
 

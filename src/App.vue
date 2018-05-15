@@ -294,7 +294,7 @@ export default {
             const element = this.chartTopics[index]
             if(element.name !== msg.topicName){
               
-              for (let j = 0; j < 4; j++) {
+              for (let j = 0; j < 5; j++) {
                 this.chartTopics[index].data.push(0)
               }
               this.chartTopics[index].data = this.chartTopics[index].data.slice(this.numeroSlice)

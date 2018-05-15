@@ -10,7 +10,7 @@
          <div class="column bottom-panel">
             <div id="trafficpanel" >
                <aside>
-                  <h5 class="title is-5">Diferencias de mensajes</h5>
+                  <h5 class="title is-5">Topics Speed</h5>
                   <div class="column jobstraffic-green" >
                      <p>Fast</p>
                      <ul class="menu-list is-size-7">
@@ -39,7 +39,7 @@
             </div>
          </div>
          <div class="column bottom-panel">
-               <h5 class="title is-5">Mensajes Recibidos</h5>
+               <h5 class="title is-5">Received messages</h5>
                <div class="select">
                   <select v-model="selectedTime">
                      <option value="1" selected>Segundos</option>
@@ -48,39 +48,39 @@
                   </select>
                </div>
                <div id="counter" >
-                  <p id="counterp">Total recibidos: {{ this.counter }}</p>
+                  <p id="counterp">Total received: {{ this.counter }}</p>
                   <p id="messagePerInterval">{{ this.messagesPerInterval }}
                      <span v-if="selectedTime == 1">/s</span>
                      <span v-else-if="selectedTime == 60">/m</span>
                      <span v-else>/h</span>
                   </p>
                   <p id="secondsspent"> {{ this.secondsSpent/this.selectedTime }} 
-                     <span v-if="selectedTime==1">Segundos</span> 
-                     <span v-else-if="selectedTime==60">Minutos</span>
-                     <span v-else>horas</span>
+                     <span v-if="selectedTime==1">Seconds</span> 
+                     <span v-else-if="selectedTime==60">Minutes</span>
+                     <span v-else>Hours</span>
                   </p>
                </div>
             </div>
          <div class="column bottom-panel">
             <!--<div class="columns">-->
-               <h5 class="title is-5" >Notificaciones</h5>
-               <h3>Cuando la media del trafico sea</h3>
+               <h5 class="title is-5" >Notifications</h5>
+               <h3>When the average traffic is</h3>
                <input class="input" v-model.number="minimumTraffic" type="number" placeholder="2" value="2">
-               <h3>En el topic</h3>
+               <h3>In the topic/s</h3>
                <multiselect 
                   v-model="selectedTopics" 
                   :options="topicsNames"
                   :multiple="true"
                   >
                </multiselect>
-               <h4>Notificarme cada:</h4>
+               <h4>Notify me every:</h4>
                <input class="input" type="number" v-model="notificationsTime" placeholder="2" value="2">  
             
                <div class="select">
                   <select v-model="notificationsTimeMeasure">
-                     <option value="1" >Segundos</option>
-                     <option value="60" selected>Minutos</option>
-                     <option value="3600">Horas</option>
+                     <option value="1" >Seconds</option>
+                     <option value="60" selected>Minutes</option>
+                     <option value="3600">Hours</option>
                   </select>
                </div>
          </div>

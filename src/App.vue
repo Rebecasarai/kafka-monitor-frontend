@@ -157,9 +157,9 @@ export default {
     /**
      * @param {Object} data Represents the message from the server with the topics data */
     exabeat (data) {
-        this.processData(data)
-        this.setChartdata()
-        this.calculateSpeed()
+      this.processData(data)
+      this.setChartdata()
+      this.calculateSpeed()
     },
     /**
      * @param {String} data Represents an action that ocurred from the backend, like changes 
@@ -321,7 +321,6 @@ export default {
      * @param data 
      */
     processData(data){
-
       this.calculateMessagesMedia()
       const now = new Date()
       const strDate = [now.getHours(), now.getMinutes()].join(':')
@@ -333,7 +332,6 @@ export default {
       this.interval = this.data[0].interval
 
       this.organizeTopics()
-      
     },
 
     /**@description Makes the chart dinamic, depending on the kafka topics information. 
@@ -361,7 +359,6 @@ export default {
         }
       }
 
-      // console.log(JSON.stringify(keys(tmp))+'\n'+JSON.stringify(values(tmp)))
       this.topics = tmp
       this.topicsNames = keys(this.topics)
 
@@ -369,9 +366,10 @@ export default {
         return {
           name: name, 
           type:'line',
-          stack: '总量',
+          stack: 'increments',
           areaStyle: {normal: {}},  
-          data: data }
+          data: data 
+        }
       }))
     },
 

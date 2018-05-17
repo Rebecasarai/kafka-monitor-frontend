@@ -102,7 +102,7 @@
  */
 /* eslint-disable */
 import echarts from 'echarts'
-import { keys, values, mapValues, pickBy, map, has, reduce, some, remove, uniq  } from 'lodash'
+import { keys, values, mapValues, pickBy, map, has, reduce, some, remove, uniq, filter, find, findIndex, differenceBy  } from 'lodash'
 
 import Vue from 'vue'
 import VueNativeNotification from 'vue-native-notification'
@@ -310,17 +310,18 @@ export default {
      * 
     **/
     removeTopic(msg, index){
+      if(this.chartTopics.length !== this.data[0].topics.length){
 
-      this.chartTopics.splice(index, 1)
-      console.log(this.chartTopics)
-      this.chartTopics = this.chartTopics.slice(this.numeroSlice)
+      }
+
+
     },
 
     /**@description Process the data passed by the exabeat socket function. 
      * This is a message sent from the backend and contains the KAFKA data
      * @param data 
      */
-    processData(data){
+    async processData(data){
       this.calculateMessagesMedia()
       const now = new Date()
       const strDate = [now.getHours(), now.getMinutes()].join(':')
@@ -331,7 +332,7 @@ export default {
       this.date = this.date.slice(this.numeroSlice)
       this.interval = this.data[0].interval
 
-      this.organizeTopics()
+      await this.organizeTopics()
     },
 
     /**@description Makes the chart dinamic, depending on the kafka topics information. 
@@ -339,14 +340,56 @@ export default {
      * Sets an array with the options data for the chart. This is mainly done beacuse when
      * a new topic is added, throws an error if the type or stack is not defined. s
      */
-    organizeTopics(){
+    async organizeTopics(){
       var tmp = []
       var dataTopics = this.data[0].topics
 
       for(let i in dataTopics){
 
-        const msg = dataTopics[i] // message of each topic with its increment
-        this.closeTopicLine(msg)
+        var msg = dataTopics[i] // message of each topic with its increment
+        // this.closeTopicLine(msg)
+        var fixed = []
+        // if(this.chartTopics.length !== this.data[0].topics.length){
+          
+          /*console.log(JSON.stringify(this.chartTopics))
+          console.log(``)
+          console.log(JSON.stringify(this.data[0]))*/
+          /*
+          for (let index = 0; index < this.chartTopics.length; index++) {
+            const element = this.chartTopics[index]
+            if(typeof element !== 'undefined'){
+
+              if(element.name !== this.data[0].topics[i].topicName ){
+                console.log('')
+                console.log(JSON.stringify(this.chartTopics))
+                this.chartTopics.splice(index, 1)
+                console.log(JSON.stringify(this.chartTopics))
+                this.chartTopics = this.chartTopics.slice(-5)
+                console.log('')
+              }
+            }
+          }*/
+/*
+          fixed = differenceBy(this.data[0].topics, this.chartTopics, 'topic')await map(this.data[0].topics, topic => {
+          var oldData = filter(this.chartTopics, oldTopic => oldTopic.name !== topic.topicName) // Los antiguos
+
+          return oldData.length > 0 ? oldData[0] : topic
+        })
+          console.log('fixed:')
+          console.log(JSON.stringify(fixed))
+
+          for (let index = 0; index < fixed.length; index++) {
+
+            var t = findIndex(this.chartTopics, function(o) { return o.name == fixed[index].topicName })
+            console.log(JSON.stringify(t))
+            this.chartTopics.splice(t)
+            console.log('a eliminar')
+            console.log(JSON.stringify(this.chartTopics))
+           // }
+          }*/
+        // }
+
+
 
         if(this.topics[msg.topicName]){ // if the array of topics has a key name node of the topic, i.e. it exists
 
@@ -359,8 +402,24 @@ export default {
         }
       }
 
+
       this.topics = tmp
       this.topicsNames = keys(this.topics)
+
+
+      if(this.chartTopics.length !== this.data[0].topics.length){
+          console.log('charttopics: '+this.chartTopics.length+' || this.data:'+this.data[0].topics.length)
+
+          //filter(this.chartTopics, function(o) { return !o.active; })
+
+          this.chartTopics = map(this.data[0].topics, topic => {
+            const oldData = filter(this.chartTopics, oldTopic => oldTopic.name !== topic.topicName) // Los antiguos
+
+            return oldData.length > 0 ? oldData[0] : topic
+          })
+
+      }
+
 
       this.chartTopics = values(mapValues(this.topics, (data, name) => {
         return {

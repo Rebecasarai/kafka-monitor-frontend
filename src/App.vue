@@ -389,26 +389,27 @@ export default {
         
       return differenceBy(this.chartTopics, y, 'name')
     },
+    /**
+     * Deletes topics that have been removed from config file in the chart, by going 
+     * through the differences loop and deleting each one 
+     */
+    deleteTopicsFromChart(differenc){
+      for (let i = 0; i < differenc.length; i++) {
+        var index = findIndex(this.chartTopics, function(t) { return t.name == differenc[i].name })
+        
+        if(index !== -1 && typeof this.chartTopics[index] !== 'undefined'){
+          this.chartTopics[index].data = null
+        }
+      }
+    },
+
     checkChanges(){
       if(this.chartTopics.length !== this.data[0].topics.length){
 
-        var difference = this.differenceByTopicName()
-
-        for (let i = 0; i < difference.length; i++) {
-          var index = findIndex(this.chartTopics, function(t) { return t.name == difference[i].name })
-          console.log(index)
-          if(index !== -1){
-            if(typeof this.chartTopics[index] !== 'undefined'){
-              console.log(this.chartTopics[index].data)
-            
-              this.chartTopics[index].data = null
-            }
-          }
-
-        }
-         this.setChartdata()
+        var differenc = this.differenceByTopicName()
+        this.deleteTopicsFromChart(differenc)
+        this.setChartdata()
       }
-
     },
 
     /**

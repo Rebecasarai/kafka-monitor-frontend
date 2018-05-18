@@ -281,42 +281,6 @@ export default {
       })
     },
 
-    /**
-     * @description Called when topics are removed from config file, to not show them on the chart
-     * And refill the data array of that topic with 0s
-     * If the global variable of topics doesn't have the same lenght, then go trough the topics
-     * and if one of those topics name is not equal to the one receiving from the serve,
-     * it fills its data array of increments to 0 and later on removes it
-     */
-    closeTopicLine(msg){          
-      if(this.chartTopics.length !== this.data[0].topics.length){
-          for (let index = 0; index < this.chartTopics.length; index++) {
-            const element = this.chartTopics[index]
-            if(element.name !== msg.topicName){
-              
-              for (let j = 0; j < Math.abs(this.numeroSlice); j++) {
-                this.chartTopics[index].data.push(0) 
-              }
-              this.chartTopics[index].data = this.chartTopics[index].data.slice(this.numeroSlice)
-              // this.removeTopic(msg, index)
-            }
-          }
-        this.setChartdata()
-      }
-    },
-
-    /**
-     * @description Removes a topic based on its index
-     * 
-    **/
-    removeTopic(msg, index){
-      if(this.chartTopics.length !== this.data[0].topics.length){
-
-      }
-
-
-    },
-
     /**@description Process the data passed by the exabeat socket function. 
      * This is a message sent from the backend and contains the KAFKA data
      * @param data 
@@ -346,26 +310,23 @@ export default {
 
       for(let i in dataTopics){
 
-        var msg = dataTopics[i] // message of each topic with its increment
+        var topicFromMessage = dataTopics[i] // message of each topic with its increment
 
-        if(this.topics[msg.topicName]){ // if the array of topics has a key name node of the topic, i.e. it exists
+        if(this.topics[topicFromMessage.topicName]){ // if the array of topics has a key name node of the topic, i.e. it exists
 
-          tmp[msg.topicName] = Object.assign([], this.topics[msg.topicName])
-          tmp[msg.topicName].push(msg.increment)
-          tmp[msg.topicName] = tmp[msg.topicName].slice(this.numeroSlice)
+          tmp[topicFromMessage.topicName] = Object.assign([], this.topics[topicFromMessage.topicName])
+          tmp[topicFromMessage.topicName].push(topicFromMessage.increment)
+          tmp[topicFromMessage.topicName] = tmp[topicFromMessage.topicName].slice(this.numeroSlice)
 
         } else {
-          tmp[msg.topicName] = this.firstTimeIncrements(msg)
+          tmp[topicFromMessage.topicName] = this.firstTimeIncrements(topicFromMessage)
         }
       }
-
 
       this.topics = tmp
       this.topicsNames = keys(this.topics)
 
       this.checkChanges()
-
-
       this.chartTopics = values(mapValues(this.topics, (data, name) => {
         return {
           name: name, 
@@ -376,33 +337,55 @@ export default {
         }
       }))
     },
+    /**
+     * Gets the difference between 
+     */
     differenceByTopicName(){
       var keyMap = {
           topicName: 'name'
         }
-
-        var y = this.data[0].topics.map(function(obj) {
-          return mapKeys(obj, function(value, key) {
-            return keyMap[key];
-          })
+      var y = this.data[0].topics.map(function(obj) {
+        return mapKeys(obj, function(value, key) {
+          return keyMap[key];
         })
+      })
         
       return differenceBy(this.chartTopics, y, 'name')
     },
     /**
      * Deletes topics that have been removed from config file in the chart, by going 
-     * through the differences loop and deleting each one 
+     * through the differences loop and deleting each one.
+     * @param {Object} differenc Represents the array resulting from the difference 
+     * of The new Topics to display on the chart and the old ones.
      */
     deleteTopicsFromChart(differenc){
       for (let i = 0; i < differenc.length; i++) {
         var index = findIndex(this.chartTopics, function(t) { return t.name == differenc[i].name })
         
         if(index !== -1 && typeof this.chartTopics[index] !== 'undefined'){
+          this.deleteTopicsFromSpeed(index, this.chartTopics[index].name)
           this.chartTopics[index].data = null
         }
       }
     },
+    /**
+     * 
+     */
+    deleteTopicsFromSpeed(index, name){
+      console.log(name)
+      var indexSlow = findIndex(this.topicsSpeed.slow, function(t) { return t == name })
+      var indexFast = findIndex(this.topicsSpeed.fast, function(t) { return t == name })
+      var indexStopped = findIndex(this.topicsSpeed.stopped, function(t) { return t == name })
+    
+      if (indexSlow !== -1) this.topicsSpeed.slow.splice(indexSlow, 1)
+      if (indexFast !== -1) this.topicsSpeed.fast.splice(indexFast, 1)
+      if (indexStopped !== -1) this.topicsSpeed.stopped.splice(indexStopped, 1)
 
+    },
+    /**
+     * checks if there has been changes on topic between the ne data that comes from server to the chart's one
+     * If so, deletes the data of that or those topics from the chart. So it really updates real time
+     */
     checkChanges(){
       if(this.chartTopics.length !== this.data[0].topics.length){
 
@@ -414,21 +397,20 @@ export default {
 
     /**
      * @description Creates an array to fullfill the data in case a new topic is added
-     * 
+     * @param {Object} topicFromMessage Represents the topic with increments from the server message
      * */
-    firstTimeIncrements(msg){
+    firstTimeIncrements(topicFromMessage){
       var firstTimeIncrements = []
 
       for (let index = 0; index < Math.abs(this.numeroSlice); index++) {
         firstTimeIncrements.push(0)
       }
-      firstTimeIncrements.push(msg.increment)
+      firstTimeIncrements.push(topicFromMessage.increment)
       return firstTimeIncrements
     },
 
-    /**@description creates the chart to visualize the topics increments 
-     * 
-    */
+    /**@description creates the chart to visualize the topics increments, setting
+     * the options of it, like tooltip, toolbox, etc */
     createMultipleChart(){
 
       // initialize echarts instance with prepared DOM
@@ -441,7 +423,6 @@ export default {
       grid:{
         y2: 100
       },
-
       tooltip : {
         trigger: 'axis',
         axisPointer: {
@@ -454,159 +435,154 @@ export default {
           }
         }
       },
-        toolbox: {
-          show: true,
-          bottom: 0,
-          right: 80,
-          feature: {
-            dataZoom: {
-              yAxisIndex: 'none',
-              title: {
-                zoom: 'Zoom',
-                back: 'Back'
-              }
-            },
-            magicType: {
-              type: ['line', 'bar'],
-              title: {
-                line: 'Line chart',
-                bar: 'Bar chart'
-              }
-            },
-            restore: {
-              title: 'Restore'
-            },
-            saveAsImage: {
-              name: 'Save',
-              title: 'Save'
+      toolbox: {
+        show: true,
+        bottom: 0,
+        right: 80,
+        feature: {
+          dataZoom: {
+            yAxisIndex: 'none',
+            title: {
+              zoom: 'Zoom',
+              back: 'Back'
             }
-          }
-        },
-        grid: {
-          left: '3%',
-          right: '4%',
-          bottom: '3%',
-          containLabel: true
-        },
-        xAxis : [
-          {
-            type: 'category',
-            boundaryGap: false
-          }
-        ],
-        yAxis : [
-          {
-            type: 'value',
-            boundaryGap: [0, '30%'],
-            axisLabel: {
-              formatter: '{value} req/'+ this.interval/1000 +'s'
+          },
+          magicType: {
+            type: ['line', 'bar'],
+            title: {
+              line: 'Line chart',
+              bar: 'Bar chart'
             }
+          },
+          restore: {
+            title: 'Restore'
+          },
+          saveAsImage: {
+            name: 'Save',
+            title: 'Save'
           }
-        ]
-      })
+        }
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+      },
+      xAxis : [
+        {
+          type: 'category',
+          boundaryGap: false
+        }
+      ],
+      yAxis : [
+        {
+          type: 'value',
+          boundaryGap: [0, '30%'],
+          axisLabel: {
+            formatter: '{value} req/'+ this.interval/1000 +'s'
+          }
+        }
+      ]
+    })
 
-      /** @description for responsive design, recreates the chart each time the screen width is changed */
-      this.$nextTick(() => {
-        window.addEventListener('resize', () => {
-          [this.multipleChart].forEach(c => {
-            c.resize()
-          })
+    /** @description for responsive design, recreates the chart each time the screen width is changed */
+    this.$nextTick(() => {
+      window.addEventListener('resize', () => {
+        [this.multipleChart].forEach(c => {
+          c.resize()
         })
       })
+    })
         
-      },
-      /**@description Calculates the average
-       * @param {array} increments Represents the array of increments of a particular topic
-       * @returns {int} Representing the average
-       */
-      calculateAverage(increments){
-        var sum = 0
-        if(increments !== null){
-        for( var i = 0; i < increments.length; i++ ){
-            sum += parseInt( increments[i], 10 ) // add the base
-        }
-
-        return sum/increments.length
-
-        }
-      },
-      /**@description Calculates the average of increments in topics, assigning them the category based on the average.
-       */
-      calculateSpeed(){
-        for (let index = 0; index < this.chartTopics.length; index++) {
-          var increments = this.chartTopics[index].data
-          var avg = this.calculateAverage(increments)
-          this.asignSpeed(avg, index)
-        }
-      },
-      /**
-       * @description Determines the category of speed of a topic based on its average increments
-       */
-      asignSpeed(avg, index){
-        if(avg < 1){
-
-          this.topicsSpeed.stopped.push(this.chartTopics[index].name)
-          this.topicsSpeed.stopped = uniq(this.topicsSpeed.stopped)
-          this.validateTopicSpeed('stopped', index)
-
-        }else if(avg < 10){
-
-          this.topicsSpeed.slow.push(this.chartTopics[index].name)
-          this.topicsSpeed.slow = uniq(this.topicsSpeed.slow)
-          this.validateTopicSpeed('slow', index)
-          
-        }else{
-          this.topicsSpeed.fast.push(this.chartTopics[index].name)
-          this.topicsSpeed.fast = uniq(this.topicsSpeed.fast)
-          this.validateTopicSpeed('fast', index)
-        }
-      },
-
-      /**
-       * @description Validates that if a topic is slow, then is not fast or stopped anymore.
-       * Its necessary to remove from other speed arrays 
-       * @param {String} type  Rpresents the type of speed is now belonging to
-       * @param {int} index  Represents the index of the global chartTopics array*/
-      validateTopicSpeed(type, index){
-        switch (type) {
-          case 'fast':
-            var i = this.topicsSpeed.slow.indexOf(this.chartTopics[index].name)
-            var j = this.topicsSpeed.stopped.indexOf(this.chartTopics[index].name)
-
-            if (i !== -1) this.topicsSpeed.slow.splice(i, 1)
-            if (j !== -1) this.topicsSpeed.stopped.splice(j, 1)
-            break
-
-          case 'slow':
-            var i = this.topicsSpeed.fast.indexOf(this.chartTopics[index].name)
-            var j = this.topicsSpeed.stopped.indexOf(this.chartTopics[index].name)
-
-            if (i !== -1) this.topicsSpeed.fast.splice(i, 1)
-            if (j !== -1) this.topicsSpeed.stopped.splice(j, 1)
-            break
-
-          case 'stopped':
-            var i = this.topicsSpeed.fast.indexOf(this.chartTopics[index].name)
-            var j = this.topicsSpeed.slow.indexOf(this.chartTopics[index].name)
-
-            if (i !== -1) this.topicsSpeed.fast.splice(i, 1)
-            if (j !== -1) this.topicsSpeed.slow.splice(j, 1)
-            break
-        
-          default:
-
-            break
-        }
+    },
+    /**@description Calculates the average
+     * @param {array} increments Represents the array of increments of a particular topic
+     * @returns {int} Representing the average
+     */
+    calculateAverage(increments){
+      var sum = 0
+      if(increments !== null){
+      for( var i = 0; i < increments.length; i++ ){
+          sum += parseInt( increments[i], 10 ) // add the base
+      }
+      return sum/increments.length
       }
     },
-    computed: { 
-      fastTopics: function() {
-        return pickBy(this.topics, function(t) {
-          return t.data
-        })
-      } 
+    /**@description Calculates the average of increments in topics, assigning them the category based on the average.
+     */
+    calculateSpeed(){
+      for (let index = 0; index < this.chartTopics.length; index++) {
+        var increments = this.chartTopics[index].data
+        var avg = this.calculateAverage(increments)
+        this.asignSpeed(avg, index)
+      }
     },
-  }
+    /**
+     * @description Determines the category of speed of a topic based on its average increments
+     */
+    asignSpeed(avg, index){
+      if(avg < 1){
+
+        this.topicsSpeed.stopped.push(this.chartTopics[index].name)
+        this.topicsSpeed.stopped = uniq(this.topicsSpeed.stopped)
+        this.validateTopicSpeed('stopped', index)
+
+      }else if(avg < 10){
+
+        this.topicsSpeed.slow.push(this.chartTopics[index].name)
+        this.topicsSpeed.slow = uniq(this.topicsSpeed.slow)
+        this.validateTopicSpeed('slow', index)
+        
+      }else{
+        this.topicsSpeed.fast.push(this.chartTopics[index].name)
+        this.topicsSpeed.fast = uniq(this.topicsSpeed.fast)
+        this.validateTopicSpeed('fast', index)
+      }
+    },
+
+    checkIfRemoved(avg, index){
+      some(this.chartTopics, index)
+    },
+
+    /**
+     * @description Validates that if a topic is slow, then is not fast or stopped anymore.
+     * Its necessary to remove from other speed arrays 
+     * @param {String} type  Rpresents the type of speed is now belonging to
+     * @param {int} index  Represents the index of the global chartTopics array*/
+    validateTopicSpeed(type, index){
+      switch (type) {
+        case 'fast':
+          var i = this.topicsSpeed.slow.indexOf(this.chartTopics[index].name)
+          var j = this.topicsSpeed.stopped.indexOf(this.chartTopics[index].name)
+
+          if (i !== -1) this.topicsSpeed.slow.splice(i, 1)
+          if (j !== -1) this.topicsSpeed.stopped.splice(j, 1)
+          break
+
+        case 'slow':
+          var i = this.topicsSpeed.fast.indexOf(this.chartTopics[index].name)
+          var j = this.topicsSpeed.stopped.indexOf(this.chartTopics[index].name)
+
+          if (i !== -1) this.topicsSpeed.fast.splice(i, 1)
+          if (j !== -1) this.topicsSpeed.stopped.splice(j, 1)
+          break
+
+        case 'stopped':
+          var i = this.topicsSpeed.fast.indexOf(this.chartTopics[index].name)
+          var j = this.topicsSpeed.slow.indexOf(this.chartTopics[index].name)
+
+          if (i !== -1) this.topicsSpeed.fast.splice(i, 1)
+          if (j !== -1) this.topicsSpeed.slow.splice(j, 1)
+          break
+      
+        default:
+
+          break
+      }
+    }
+  },
+}
 </script>
 
 <style>

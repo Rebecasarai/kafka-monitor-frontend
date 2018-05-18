@@ -102,7 +102,7 @@
  */
 /* eslint-disable */
 import echarts from 'echarts'
-import { keys, values, mapValues, pickBy, map, has, reduce, some, remove, uniq, filter, find, findIndex, differenceBy  } from 'lodash'
+import { keys, values, mapValues, pickBy, map, mapKeys, has, reduce, some, remove, uniq, filter, find, findIndex, differenceBy, differenceWith  } from 'lodash'
 
 import Vue from 'vue'
 import VueNativeNotification from 'vue-native-notification'
@@ -347,49 +347,6 @@ export default {
       for(let i in dataTopics){
 
         var msg = dataTopics[i] // message of each topic with its increment
-        // this.closeTopicLine(msg)
-        var fixed = []
-        // if(this.chartTopics.length !== this.data[0].topics.length){
-          
-          /*console.log(JSON.stringify(this.chartTopics))
-          console.log(``)
-          console.log(JSON.stringify(this.data[0]))*/
-          /*
-          for (let index = 0; index < this.chartTopics.length; index++) {
-            const element = this.chartTopics[index]
-            if(typeof element !== 'undefined'){
-
-              if(element.name !== this.data[0].topics[i].topicName ){
-                console.log('')
-                console.log(JSON.stringify(this.chartTopics))
-                this.chartTopics.splice(index, 1)
-                console.log(JSON.stringify(this.chartTopics))
-                this.chartTopics = this.chartTopics.slice(-5)
-                console.log('')
-              }
-            }
-          }*/
-/*
-          fixed = differenceBy(this.data[0].topics, this.chartTopics, 'topic')await map(this.data[0].topics, topic => {
-          var oldData = filter(this.chartTopics, oldTopic => oldTopic.name !== topic.topicName) // Los antiguos
-
-          return oldData.length > 0 ? oldData[0] : topic
-        })
-          console.log('fixed:')
-          console.log(JSON.stringify(fixed))
-
-          for (let index = 0; index < fixed.length; index++) {
-
-            var t = findIndex(this.chartTopics, function(o) { return o.name == fixed[index].topicName })
-            console.log(JSON.stringify(t))
-            this.chartTopics.splice(t)
-            console.log('a eliminar')
-            console.log(JSON.stringify(this.chartTopics))
-           // }
-          }*/
-        // }
-
-
 
         if(this.topics[msg.topicName]){ // if the array of topics has a key name node of the topic, i.e. it exists
 
@@ -406,19 +363,7 @@ export default {
       this.topics = tmp
       this.topicsNames = keys(this.topics)
 
-
-      if(this.chartTopics.length !== this.data[0].topics.length){
-          console.log('charttopics: '+this.chartTopics.length+' || this.data:'+this.data[0].topics.length)
-
-          //filter(this.chartTopics, function(o) { return !o.active; })
-
-          this.chartTopics = map(this.data[0].topics, topic => {
-            const oldData = filter(this.chartTopics, oldTopic => oldTopic.name !== topic.topicName) // Los antiguos
-
-            return oldData.length > 0 ? oldData[0] : topic
-          })
-
-      }
+      this.checkChanges()
 
 
       this.chartTopics = values(mapValues(this.topics, (data, name) => {
@@ -430,6 +375,52 @@ export default {
           data: data 
         }
       }))
+
+      
+
+    },
+    checkChanges(){
+      if(this.chartTopics.length !== this.data[0].topics.length){
+        var keyMap = {
+          topicName: 'name'
+        };
+
+        var y = this.data[0].topics.map(function(obj) {
+          return mapKeys(obj, function(value, key) {
+            return keyMap[key];
+          })
+        })
+        console.log(JSON.stringify(y))
+        
+        var difference = differenceBy(this.chartTopics, y, 'name')
+
+        console.log('Difference: '+JSON.stringify(difference))
+
+        for (let i = 0; i < difference.length; i++) {
+          var index = findIndex(this.chartTopics, function(t) { return t.name == difference[i].name })
+          console.log(index)
+          if(index !== -1){
+            if(typeof this.chartTopics[index] !== 'undefined'){
+              console.log(this.chartTopics[index].data)
+            
+              this.chartTopics[index].data = null
+            }
+          }
+
+        }
+         this.multipleChart.setOption({
+            legend: {
+                data: this.topicsNames,
+                type: 'scroll',
+                left: 10
+            },
+            xAxis: {
+              data: this.date
+            },
+            series : this.chartTopics
+          })
+      }
+
     },
 
     /**
@@ -461,13 +452,17 @@ export default {
       grid:{
         y2: 100
       },
+
       tooltip : {
         trigger: 'axis',
         axisPointer: {
             type: 'cross',
             label: {
                 backgroundColor: '#6a7985'
-            }
+        },
+        formatter: function (params) {
+            console.log(params)
+          }
         }
       },
         toolbox: {
@@ -537,17 +532,20 @@ export default {
        */
       calculateAverage(increments){
         var sum = 0
+        if(increments !== null){
         for( var i = 0; i < increments.length; i++ ){
             sum += parseInt( increments[i], 10 ) // add the base
         }
 
         return sum/increments.length
+
+        }
       },
       /**@description Calculates the average of increments in topics, assigning them the category based on the average.
        */
       calculateSpeed(){
         for (let index = 0; index < this.chartTopics.length; index++) {
-          const increments = this.chartTopics[index].data
+          var increments = this.chartTopics[index].data
           var avg = this.calculateAverage(increments)
           this.asignSpeed(avg, index)
         }

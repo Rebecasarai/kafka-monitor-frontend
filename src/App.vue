@@ -364,26 +364,9 @@ export default {
         var index = findIndex(this.chartTopics, function(t) { return t.name == differenc[i].name })
         
         if(index !== -1 && typeof this.chartTopics[index] !== 'undefined'){
-          this.deleteTopicsFromSpeed(index, this.chartTopics[index].name)
           this.chartTopics[index].data = null
         }
       }
-    },
-    /**
-     * @description Deletes the topic that have been removed from the config file, and so, as the chart is updated,
-     * The topis speed it is too for the bottom left panel that shows the topics speed.
-     * @param {int} index Represents the index of the global charttopics of the chart
-     * @param {String} name Represents the name od the topic to be removed
-     */
-    deleteTopicsFromSpeed(index, name){
-      var indexSlow = findIndex(this.topicsSpeed.slow, function(t) { return t == name })
-      var indexFast = findIndex(this.topicsSpeed.fast, function(t) { return t == name })
-      var indexStopped = findIndex(this.topicsSpeed.stopped, function(t) { return t == name })
-    
-      if (indexSlow !== -1) this.topicsSpeed.slow.splice(indexSlow, 1)
-      if (indexFast !== -1) this.topicsSpeed.fast.splice(indexFast, 1)
-      if (indexStopped !== -1) this.topicsSpeed.stopped.splice(indexStopped, 1)
-
     },
     /**
      * @description checks if there has been changes on topic between the ne data that comes from server to the chart's one
@@ -504,19 +487,6 @@ export default {
     })
         
     },
-    /**@description Calculates the average
-     * @param {array} increments Represents the array of increments of a particular topic
-     * @returns {int} Representing the average
-     */
-    calculateAverage(increments){
-      var sum = 0
-      if(increments !== null){
-      for( var i = 0; i < increments.length; i++ ){
-          sum += parseInt( increments[i], 10 ) // add the base
-      }
-      return sum/increments.length
-      }
-    },
     getTopicNames(topics){
       return map(topics, topic => topic.name)
     },
@@ -524,9 +494,7 @@ export default {
      */
     calculateSpeed(){
       const incrementos = flatMap(this.chartTopics, 'data')
-      const suma = sum(incrementos)
-      this.totalAverage = suma/incrementos.length
-      console.log(this.totalAverage)
+      this.totalAverage = sum(incrementos)/incrementos.length
 
       const stopped = filter(this.chartTopics, topic => sum(topic.data)/topic.data.length < 1)
       const slow = filter(this.chartTopics, topic => {

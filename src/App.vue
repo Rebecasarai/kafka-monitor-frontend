@@ -102,7 +102,7 @@
  */
 /* eslint-disable */
 import echarts from 'echarts'
-import { pick, flatMap, sum, max, maxBy, keys, values, mapValues, pickBy, map, mapKeys, has, reduce, some, remove, uniq, filter, find, findIndex, differenceBy, differenceWith  } from 'lodash'
+import {  flatMap, sum, max, keys, values, mapValues, map, mapKeys, has, reduce, some, remove, filter, find, findIndex, differenceBy  } from 'lodash'
 
 import Vue from 'vue'
 import VueNativeNotification from 'vue-native-notification'
@@ -526,6 +526,7 @@ export default {
       const incrementos = flatMap(this.chartTopics, 'data')
       const suma = sum(incrementos)
       this.totalAverage = suma/incrementos.length
+      console.log(this.totalAverage)
 
       const stopped = filter(this.chartTopics, topic => sum(topic.data)/topic.data.length < 1)
       const slow = filter(this.chartTopics, topic => {
@@ -537,7 +538,7 @@ export default {
       this.topicsSpeed.stopped = this.getTopicNames(stopped)
       this.topicsSpeed.slow = this.getTopicNames(slow)
       this.topicsSpeed.fast = this.getTopicNames(fast)
-    },
+    }
   },
 }
 </script>

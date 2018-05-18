@@ -375,26 +375,24 @@ export default {
           data: data 
         }
       }))
-
-      
-
     },
-    checkChanges(){
-      if(this.chartTopics.length !== this.data[0].topics.length){
-        var keyMap = {
+    differenceByTopicName(){
+      var keyMap = {
           topicName: 'name'
-        };
+        }
 
         var y = this.data[0].topics.map(function(obj) {
           return mapKeys(obj, function(value, key) {
             return keyMap[key];
           })
         })
-        console.log(JSON.stringify(y))
         
-        var difference = differenceBy(this.chartTopics, y, 'name')
+      return differenceBy(this.chartTopics, y, 'name')
+    },
+    checkChanges(){
+      if(this.chartTopics.length !== this.data[0].topics.length){
 
-        console.log('Difference: '+JSON.stringify(difference))
+        var difference = this.differenceByTopicName()
 
         for (let i = 0; i < difference.length; i++) {
           var index = findIndex(this.chartTopics, function(t) { return t.name == difference[i].name })
@@ -408,17 +406,7 @@ export default {
           }
 
         }
-         this.multipleChart.setOption({
-            legend: {
-                data: this.topicsNames,
-                type: 'scroll',
-                left: 10
-            },
-            xAxis: {
-              data: this.date
-            },
-            series : this.chartTopics
-          })
+         this.setChartdata()
       }
 
     },

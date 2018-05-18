@@ -12,7 +12,7 @@
                <aside>
                   <h5 class="title is-5">Topics Speed</h5>
                   <div class="column jobstraffic-green" >
-                     <h6 class="title is-6">Fast</h6>
+                     <h6 class="title is-6">Fast (Over average)</h6>
                      <ul class="menu-list is-size-7">
                         <li  v-for="topic in topicsSpeed.fast" :key="topic">
                            <p v-bind:id="topic">{{ topic }}</p>
@@ -20,7 +20,7 @@
                      </ul>
                   </div>
                   <div class="column  jobstraffic-yellow" >
-                    <h6 class="title is-6">Slow</h6>
+                    <h6 class="title is-6">Slow (Under the average)</h6>
                     <ul class="menu-list is-size-7">
                       <li  v-for="topic in topicsSpeed.slow" :key="topic">
                           <p v-bind:id="topic">{{ topic }}</p>
@@ -102,7 +102,7 @@
  */
 /* eslint-disable */
 import echarts from 'echarts'
-import { keys, values, mapValues, pickBy, map, mapKeys, has, reduce, some, remove, uniq, filter, find, findIndex, differenceBy, differenceWith  } from 'lodash'
+import { pick, flatMap, sum, max, maxBy, keys, values, mapValues, pickBy, map, mapKeys, has, reduce, some, remove, uniq, filter, find, findIndex, differenceBy, differenceWith  } from 'lodash'
 
 import Vue from 'vue'
 import VueNativeNotification from 'vue-native-notification'
@@ -131,7 +131,8 @@ export default {
       chartTopics: [],
       notiChange: false,
       timer: '',
-      topicsSpeed: {fast: [], slow:[], stopped: [] }
+      topicsSpeed: {fast: [], slow:[], stopped: [] },
+      totalAverage: []
     }
   },
 
@@ -294,7 +295,7 @@ export default {
       this.date.push(strDate)
       this.data = this.data.slice(this.numeroSlice)
       this.date = this.date.slice(this.numeroSlice)
-      this.interval = this.data[0].interval
+      this.interval = this.data[this.data.length-1].interval
 
       await this.organizeTopics()
     },
@@ -306,7 +307,7 @@ export default {
      */
     async organizeTopics(){
       var tmp = []
-      var dataTopics = this.data[0].topics
+      var dataTopics = this.data[this.data.length-1].topics
 
       for(let i in dataTopics){
 
@@ -344,7 +345,7 @@ export default {
       var keyMap = {
           topicName: 'name'
         }
-      var y = this.data[0].topics.map(function(obj) {
+      var y = this.data[this.data.length-1].topics.map(function(obj) {
         return mapKeys(obj, function(value, key) {
           return keyMap[key];
         })
@@ -369,10 +370,12 @@ export default {
       }
     },
     /**
-     * 
+     * @description Deletes the topic that have been removed from the config file, and so, as the chart is updated,
+     * The topis speed it is too for the bottom left panel that shows the topics speed.
+     * @param {int} index Represents the index of the global charttopics of the chart
+     * @param {String} name Represents the name od the topic to be removed
      */
     deleteTopicsFromSpeed(index, name){
-      console.log(name)
       var indexSlow = findIndex(this.topicsSpeed.slow, function(t) { return t == name })
       var indexFast = findIndex(this.topicsSpeed.fast, function(t) { return t == name })
       var indexStopped = findIndex(this.topicsSpeed.stopped, function(t) { return t == name })
@@ -383,27 +386,32 @@ export default {
 
     },
     /**
-     * checks if there has been changes on topic between the ne data that comes from server to the chart's one
+     * @description checks if there has been changes on topic between the ne data that comes from server to the chart's one
      * If so, deletes the data of that or those topics from the chart. So it really updates real time
      */
     checkChanges(){
-      if(this.chartTopics.length !== this.data[0].topics.length){
 
-        var differenc = this.differenceByTopicName()
+      var differenc = this.differenceByTopicName()
+      if( differenc.length > 0){
         this.deleteTopicsFromChart(differenc)
         this.setChartdata()
       }
     },
 
     /**
-     * @description Creates an array to fullfill the data in case a new topic is added
+     * @description Creates an array to fullfill the data in case a new topic is added. Adds 0 to the left of the data array
+     * If a new topic is added so it shows corectly 
      * @param {Object} topicFromMessage Represents the topic with increments from the server message
      * */
     firstTimeIncrements(topicFromMessage){
       var firstTimeIncrements = []
-
-      for (let index = 0; index < Math.abs(this.numeroSlice); index++) {
-        firstTimeIncrements.push(0)
+      var maxLength = 0
+      
+      if(this.chartTopics.length > 0){
+        maxLength = max( this.chartTopics, function(t){ return t.data.length })
+        for (let index = 0; index < maxLength.data.length; index++) {
+          firstTimeIncrements.push(0)
+        }
       }
       firstTimeIncrements.push(topicFromMessage.increment)
       return firstTimeIncrements
@@ -509,78 +517,27 @@ export default {
       return sum/increments.length
       }
     },
+    getTopicNames(topics){
+      return map(topics, topic => topic.name)
+    },
     /**@description Calculates the average of increments in topics, assigning them the category based on the average.
      */
     calculateSpeed(){
-      for (let index = 0; index < this.chartTopics.length; index++) {
-        var increments = this.chartTopics[index].data
-        var avg = this.calculateAverage(increments)
-        this.asignSpeed(avg, index)
-      }
+      const incrementos = flatMap(this.chartTopics, 'data')
+      const suma = sum(incrementos)
+      this.totalAverage = suma/incrementos.length
+
+      const stopped = filter(this.chartTopics, topic => sum(topic.data)/topic.data.length < 1)
+      const slow = filter(this.chartTopics, topic => {
+       const _sum  = sum(topic.data)/topic.data.length
+       return _sum >=1 && _sum < this.totalAverage
+      })
+      const fast = filter(this.chartTopics, topic => sum(topic.data)/topic.data.length >= this.totalAverage)
+
+      this.topicsSpeed.stopped = this.getTopicNames(stopped)
+      this.topicsSpeed.slow = this.getTopicNames(slow)
+      this.topicsSpeed.fast = this.getTopicNames(fast)
     },
-    /**
-     * @description Determines the category of speed of a topic based on its average increments
-     */
-    asignSpeed(avg, index){
-      if(avg < 1){
-
-        this.topicsSpeed.stopped.push(this.chartTopics[index].name)
-        this.topicsSpeed.stopped = uniq(this.topicsSpeed.stopped)
-        this.validateTopicSpeed('stopped', index)
-
-      }else if(avg < 10){
-
-        this.topicsSpeed.slow.push(this.chartTopics[index].name)
-        this.topicsSpeed.slow = uniq(this.topicsSpeed.slow)
-        this.validateTopicSpeed('slow', index)
-        
-      }else{
-        this.topicsSpeed.fast.push(this.chartTopics[index].name)
-        this.topicsSpeed.fast = uniq(this.topicsSpeed.fast)
-        this.validateTopicSpeed('fast', index)
-      }
-    },
-
-    checkIfRemoved(avg, index){
-      some(this.chartTopics, index)
-    },
-
-    /**
-     * @description Validates that if a topic is slow, then is not fast or stopped anymore.
-     * Its necessary to remove from other speed arrays 
-     * @param {String} type  Rpresents the type of speed is now belonging to
-     * @param {int} index  Represents the index of the global chartTopics array*/
-    validateTopicSpeed(type, index){
-      switch (type) {
-        case 'fast':
-          var i = this.topicsSpeed.slow.indexOf(this.chartTopics[index].name)
-          var j = this.topicsSpeed.stopped.indexOf(this.chartTopics[index].name)
-
-          if (i !== -1) this.topicsSpeed.slow.splice(i, 1)
-          if (j !== -1) this.topicsSpeed.stopped.splice(j, 1)
-          break
-
-        case 'slow':
-          var i = this.topicsSpeed.fast.indexOf(this.chartTopics[index].name)
-          var j = this.topicsSpeed.stopped.indexOf(this.chartTopics[index].name)
-
-          if (i !== -1) this.topicsSpeed.fast.splice(i, 1)
-          if (j !== -1) this.topicsSpeed.stopped.splice(j, 1)
-          break
-
-        case 'stopped':
-          var i = this.topicsSpeed.fast.indexOf(this.chartTopics[index].name)
-          var j = this.topicsSpeed.slow.indexOf(this.chartTopics[index].name)
-
-          if (i !== -1) this.topicsSpeed.fast.splice(i, 1)
-          if (j !== -1) this.topicsSpeed.slow.splice(j, 1)
-          break
-      
-        default:
-
-          break
-      }
-    }
   },
 }
 </script>

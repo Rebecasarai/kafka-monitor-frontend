@@ -319,29 +319,28 @@ export default {
           tmp[topicFromMessage.topicName] = tmp[topicFromMessage.topicName].slice(this.numeroSlice)
 
         } else {
-          // add the name and all until areaStyle
           tmp[topicFromMessage.topicName] = this.firstTimeIncrements(topicFromMessage)
-
         }
       }
-      
 
       this.checkChanges()
-      
+
+      this.topicsNames = keys(tmp)
+
       this.chartTopics = values(mapValues(tmp, (data, name) => {
         let res = { name, data }
 
         if(!this.topics[topicFromMessage.topicName]){
-          res.type = 'line'
+          res.type = 'line' || 'bar'
           res.stack = 'increments'
           res.areaStyle = {normal: {}}
+          res.line = true
         }
 
         return res
       }))
 
       this.topics = tmp
-      this.topicsNames = keys(this.topics)
     },
     /**
      * Gets the difference between the new topics data and the latest chart data.
@@ -357,7 +356,6 @@ export default {
           return keyMap[key];
         })
       })
-        
       return differenceBy(this.chartTopics, topicsWsameKeys, 'name')
     },
     /**
@@ -372,6 +370,7 @@ export default {
         
         if(index !== -1 && typeof this.chartTopics[index] !== 'undefined'){
           this.chartTopics[index].data = null
+          // delete this.chartTopics[index]
         }
       }
     },
@@ -383,6 +382,7 @@ export default {
 
       var differenc = this.differenceByTopicName()
       if( differenc.length > 0){
+
         this.deleteTopicsFromChart(differenc)
         this.setChartdata()
       }
@@ -467,6 +467,7 @@ export default {
         bottom: '3%',
         containLabel: true
       },
+      notMerge: true,
       xAxis : [
         {
           type: 'category',
@@ -482,7 +483,7 @@ export default {
           }
         }
       ]
-    })
+    }, {notMerge:true})
 
     /** @description for responsive design, recreates the chart each time the screen width is changed */
     this.$nextTick(() => {

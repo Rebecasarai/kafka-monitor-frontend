@@ -319,23 +319,29 @@ export default {
           tmp[topicFromMessage.topicName] = tmp[topicFromMessage.topicName].slice(this.numeroSlice)
 
         } else {
+          // add the name and all until areaStyle
           tmp[topicFromMessage.topicName] = this.firstTimeIncrements(topicFromMessage)
+
         }
       }
+      
+
+      this.checkChanges()
+      
+      this.chartTopics = values(mapValues(tmp, (data, name) => {
+        let res = { name, data }
+
+        if(!this.topics[topicFromMessage.topicName]){
+          res.type = 'line'
+          res.stack = 'increments'
+          res.areaStyle = {normal: {}}
+        }
+
+        return res
+      }))
 
       this.topics = tmp
       this.topicsNames = keys(this.topics)
-
-      this.checkChanges()
-      this.chartTopics = values(mapValues(this.topics, (data, name) => {
-        return {
-          name: name, 
-          type:'line',
-          stack: 'increments',
-          areaStyle: {normal: {}},  
-          data: data 
-        }
-      }))
     },
     /**
      * Gets the difference between the new topics data and the latest chart data.

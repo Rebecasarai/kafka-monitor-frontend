@@ -129,7 +129,6 @@ export default {
       interval: 5000,
       selectedTopics: [],
       chartTopics: [],
-      notiChange: false,
       timer: '',
       topicsSpeed: {fast: [], slow:[], stopped: [] },
       totalAverage: []
@@ -339,19 +338,21 @@ export default {
       }))
     },
     /**
-     * Gets the difference between 
+     * Gets the difference between the new topics data and the latest chart data.
+     * A keyMap is done so both this.data and this.chartTopics have the same keys,
+     * So differenceBy returns the difference based on topic names 
      */
     differenceByTopicName(){
       var keyMap = {
           topicName: 'name'
         }
-      var y = this.data[this.data.length-1].topics.map(function(obj) {
+      var topicsWsameKeys = this.data[this.data.length-1].topics.map(function(obj) {
         return mapKeys(obj, function(value, key) {
           return keyMap[key];
         })
       })
         
-      return differenceBy(this.chartTopics, y, 'name')
+      return differenceBy(this.chartTopics, topicsWsameKeys, 'name')
     },
     /**
      * Deletes topics that have been removed from config file in the chart, by going 
@@ -487,6 +488,10 @@ export default {
     })
         
     },
+    /**
+     * @description Maps the topic name of each topic
+     * @param {Object} topics Represents the object containing the topic data
+     */
     getTopicNames(topics){
       return map(topics, topic => topic.name)
     },
@@ -498,8 +503,8 @@ export default {
 
       const stopped = filter(this.chartTopics, topic => sum(topic.data)/topic.data.length < 1)
       const slow = filter(this.chartTopics, topic => {
-       const _sum  = sum(topic.data)/topic.data.length
-       return _sum >=1 && _sum < this.totalAverage
+      const _sum  = sum(topic.data)/topic.data.length
+      return _sum >=1 && _sum < this.totalAverage
       })
       const fast = filter(this.chartTopics, topic => sum(topic.data)/topic.data.length >= this.totalAverage)
 
@@ -534,9 +539,5 @@ export default {
   margin: 1% 3%;
 }
 </style>
-
-
-
-
 
 <style src="vue-multiselect/dist/vue-multiselect.min.css"></style>

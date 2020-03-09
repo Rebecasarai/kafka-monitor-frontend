@@ -1,4 +1,5 @@
 # kafka-monitor-frontend
+Application built for the company I was doing an internship and later on working in 2018, Ayesa.
 
 > Frontend for the Kafka Monitor
 
